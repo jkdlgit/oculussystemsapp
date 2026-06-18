@@ -67,7 +67,8 @@ import { supabase, hasSupabaseConfig } from '@/supabase'
 
 // ─── Constante de cooldown ──────────────────────────────────────────────────
 // Tiempo mínimo entre envíos desde el mismo dispositivo (en milisegundos).
-const COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 horas
+//const COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 horas
+const COOLDOWN_MS = 1 * 1 * 1 * 1 // 24 horas
 const STORAGE_KEY = 'oculus_last_submission'
 
 const props = defineProps<{
@@ -124,45 +125,57 @@ async function handleBook() {
   submitting.value = true
   submitError.value = ''
 
+  console.log('[DEBUG-BOOK] Iniciando proceso de agendamiento...');
+  console.log('[DEBUG-BOOK] Estado de configuración Supabase (hasSupabaseConfig):', hasSupabaseConfig);
+  console.log('[DEBUG-BOOK] Schema configurado (VITE_SUPABASE_SCHEMA):', import.meta.env.VITE_SUPABASE_SCHEMA);
+
   if (!hasSupabaseConfig) {
-    console.error('Supabase is not configured. Please check your .env variables.')
-    submitError.value = 'El servicio de agendamiento no está disponible porque la base de datos (Supabase) no está configurada.'
-    submitting.value = false
-    return
+    console.error('[DEBUG-BOOK] Supabase is not configured. Please check your .env variables.');
+    submitError.value = 'El servicio de agendamiento no está disponible porque la base de datos (Supabase) no está configurada.';
+    submitting.value = false;
+    return;
   }
 
+  const payload = {
+    nombre: props.quizData.nombre,
+    telefono: props.quizData.telefono,
+    edad: props.quizData.edad,
+    respuestas: {
+      sintomas: props.quizData.sintomas,
+      vision_lejos: props.quizData.visionLejos,
+      vision_cerca: props.quizData.visionCerca,
+      problemas_colores: props.quizData.problemasColores,
+      detalle_colores: props.quizData.detalleColores,
+    },
+    resultado: resultMessage.value,
+    utm_source: props.quizData.utmSource || null,
+    utm_medium: props.quizData.utmMedium || null,
+    utm_campaign: props.quizData.utmCampaign || null,
+    estado: 'Nuevo',
+  };
+
+  console.log('[DEBUG-BOOK] Payload a insertar en tabla "leads":', JSON.stringify(payload, null, 2));
+
   try {
-    const { error } = await supabase.from('leads').insert({
-      nombre: props.quizData.nombre,
-      telefono: props.quizData.telefono,
-      edad: props.quizData.edad,
-      respuestas: {
-        sintomas: props.quizData.sintomas,
-        vision_lejos: props.quizData.visionLejos,
-        vision_cerca: props.quizData.visionCerca,
-        problemas_colores: props.quizData.problemasColores,
-        detalle_colores: props.quizData.detalleColores,
-      },
-      resultado: resultMessage.value,
-      utm_source: props.quizData.utmSource || null,
-      utm_medium: props.quizData.utmMedium || null,
-      utm_campaign: props.quizData.utmCampaign || null,
-      estado: 'Nuevo',
-    })
+    const response = await supabase.from('leads').insert(payload);
+    console.log('[DEBUG-BOOK] Respuesta cruda de Supabase:', response);
+
+    const { error } = response;
 
     if (error) {
-      console.error('Supabase error:', error)
-      submitError.value = 'Hubo un error al agendar tu cita. Por favor intenta de nuevo.'
+      console.error('[DEBUG-BOOK] Error retornado por Supabase:', error);
+      submitError.value = `Error de base de datos (Supabase): [${error.code}] ${error.message} - ${error.details || ''}`;
     } else {
+      console.log('[DEBUG-BOOK] Inserción exitosa sin errores.');
       // ─── Guardar timestamp en localStorage ──────────────────────────────
-      localStorage.setItem(STORAGE_KEY, Date.now().toString())
-      booked.value = true
+      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      booked.value = true;
     }
-  } catch (err) {
-    console.error('Submit error:', err)
-    submitError.value = 'Hubo un error de conexión. Por favor intenta de nuevo.'
+  } catch (err: any) {
+    console.error('[DEBUG-BOOK] Excepción capturada en handleBook:', err);
+    submitError.value = `Error de conexión / excepción: ${err?.message || JSON.stringify(err)}`;
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
 }
 </script>
