@@ -892,24 +892,21 @@ async function fetchCitas() {
 
   if (!hasConfig) {
     await new Promise(r => setTimeout(r, 600))
-    // Filtrar mock a 24h
+    // Filtrar mock: solo leads registrados en las últimas 24h
     const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    citas.value = mockData.filter(c => {
-      if (!c.fecha_cita) return true
-      return new Date(c.fecha_cita) >= hace24h
-    })
+    citas.value = mockData.filter(c => new Date(c.created_at) >= hace24h)
     loading.value = false
     return
   }
 
   try {
-    // Solo citas desde hace 24h en adelante
-    const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    // Solo leads registrados en las últimas 24 horas
+    const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const { data, error: sbError } = await supabase
       .from('leads')
       .select('id, nombre, telefono, edad, respuestas, resultado, estado, fecha_cita, hora_cita, estado_cita, origen, created_at')
-      .gte('fecha_cita', hace24h)
-      .order('fecha_cita', { ascending: true, nullsFirst: false })
+      .gte('created_at', hace24h)
+      .order('created_at', { ascending: false })
 
     if (sbError) {
       error.value = `Error al cargar citas: ${sbError.message}`
