@@ -3,22 +3,22 @@
     <!-- Sidebar -->
     <aside class="z-20 flex w-16 shrink-0 flex-col items-center border-r border-slate-800 bg-slate-900 py-6">
       <div class="mb-8 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 shadow-lg shadow-indigo-500/20">
-        <Activity size="24" class="text-white" />
+        <Activity :size="24" class="text-white" />
       </div>
       <nav class="flex w-full flex-col gap-6 px-2">
         <button class="group relative flex justify-center rounded-xl bg-slate-800 p-3 text-indigo-400">
-          <LayoutDashboard size="20" />
+          <LayoutDashboard :size="20" />
         </button>
         <button class="flex justify-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white">
-          <Bell size="20" />
+          <Bell :size="20" />
         </button>
         <button class="flex justify-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white">
-          <Terminal size="20" />
+          <Terminal :size="20" />
         </button>
       </nav>
       <div class="mt-auto flex w-full flex-col gap-6 px-2">
         <button class="flex justify-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white">
-          <Settings size="20" />
+          <Settings :size="20" />
         </button>
       </div>
     </aside>
@@ -28,7 +28,7 @@
       <!-- Header -->
       <header class="relative z-10 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm">
         <div class="relative max-w-2xl flex-1">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size="18" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" :size="18" />
           <input
             type="text"
             placeholder="Buscar paciente por nombre o teléfono..."
@@ -39,7 +39,7 @@
 
         <div class="ml-4 flex items-center gap-3">
           <button @click="fetchCitas" :disabled="loading" class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50">
-            <RefreshCw size="16" :class="{ 'animate-spin': loading }" class="text-slate-400" /> {{ loading ? 'Cargando...' : 'Actualizar' }}
+            <RefreshCw :size="16" :class="{ 'animate-spin': loading }" class="text-slate-400" /> {{ loading ? 'Cargando...' : 'Actualizar' }}
           </button>
           <div class="relative">
             <select
@@ -51,7 +51,7 @@
               <option value="severity">Ordenar: Estado</option>
             </select>
             <ArrowDownUp
-              size="14"
+              :size="14"
               class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
             />
           </div>
@@ -112,7 +112,7 @@
                           getSeverityConfig(cita.estado_cita).badge
                         ]"
                       >
-                        <component :is="getSeverityConfig(cita.estado_cita).icon" size="14" />
+                        <component :is="getSeverityConfig(cita.estado_cita).icon" :size="14" />
                         {{ cita.estado_cita || 'Nueva' }}
                       </div>
                     </div>
@@ -155,15 +155,15 @@
 
                     <div class="flex items-center gap-1">
                       <button class="rounded p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600" @click.stop title="Ver Detalles">
-                        <Eye size="16" />
+                        <Eye :size="16" />
                       </button>
                       <button class="rounded p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600" @click.stop title="Editar">
-                        <Edit2 size="16" />
+                        <Edit2 :size="16" />
                       </button>
                       <div class="mx-1 h-4 w-px bg-slate-300"></div>
                       <button class="rounded p-1.5 text-slate-400 transition-colors hover:text-slate-800">
-                        <ChevronUp v-if="expandedId === cita.id" size="20" />
-                        <ChevronDown v-else size="20" />
+                        <ChevronUp v-if="expandedId === cita.id" :size="20" />
+                        <ChevronDown v-else :size="20" />
                       </button>
                     </div>
                   </div>
@@ -180,7 +180,7 @@
                       <div class="flex flex-col gap-5">
                         <div>
                           <h4 class="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                            <AlertOctagon size="14" class="text-red-500" /> Síntomas Reportados
+                            <AlertOctagon :size="14" class="text-red-500" /> Síntomas Reportados
                           </h4>
                           <div class="rounded-lg border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-700 shadow-sm">
                             {{ formatSintomas(getSintomas(cita.respuestas)) || 'Ningún síntoma específico reportado.' }}
@@ -188,7 +188,7 @@
                         </div>
                         <div>
                           <h4 class="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                            <CheckCircle2 size="14" class="text-green-500" /> Evaluación
+                            <CheckCircle2 :size="14" class="text-green-500" /> Evaluación
                           </h4>
                           <div class="rounded-lg border border-slate-200 border-l-4 border-l-green-400 bg-white p-3.5 text-sm leading-relaxed text-slate-700 shadow-sm">
                             {{ cita.resultado ? 'Resultado del quiz: ' + cita.resultado : 'Pendiente de evaluación médica en consulta.' }}
@@ -199,7 +199,7 @@
                       <div class="flex flex-col gap-5">
                         <div class="flex flex-1 flex-col">
                           <h4 class="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                            <Cpu size="14" class="text-slate-400" /> Metadata de Respuestas
+                            <Cpu :size="14" class="text-slate-400" /> Metadata de Respuestas
                           </h4>
                           <div class="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-slate-800 bg-slate-900 p-4 shadow-inner">
                             <div class="flex flex-col">
@@ -237,7 +237,7 @@
 
                         <div class="flex flex-col">
                           <h4 class="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                            <Clock size="14" class="text-slate-400" /> Registro
+                            <Clock :size="14" class="text-slate-400" /> Registro
                           </h4>
                           <div class="flex flex-col gap-1.5 rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm">
                             <div class="relative flex items-start gap-3">
@@ -256,7 +256,7 @@
             </template>
             <div v-else-if="!loading" class="rounded-xl border border-dashed border-slate-200 bg-white py-20 text-center">
               <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                <Search size="24" class="text-slate-400" />
+                <Search :size="24" class="text-slate-400" />
               </div>
               <h3 class="text-lg font-medium text-slate-900">No se encontraron citas</h3>
               <p class="mt-1 text-sm text-slate-500">
@@ -265,7 +265,7 @@
             </div>
             
             <div v-if="loading" class="py-12 text-center text-slate-500 flex flex-col items-center">
-               <RefreshCw class="animate-spin mb-4" size="32" />
+               <RefreshCw class="animate-spin mb-4" :size="32" />
                <p>Cargando información...</p>
             </div>
           </div>
