@@ -1,24 +1,57 @@
 <template>
   <div class="flex h-screen overflow-hidden bg-slate-50 font-sans text-slate-900">
     <!-- Sidebar -->
-    <aside class="z-20 flex w-16 shrink-0 flex-col items-center border-r border-slate-800 bg-slate-900 py-6">
-      <div class="mb-8 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 shadow-lg shadow-indigo-500/20">
-        <Activity :size="24" class="text-white" />
+    <aside :class="['z-20 flex shrink-0 flex-col border-r border-slate-800 bg-slate-900 py-6 transition-all duration-300 ease-in-out', isSidebarExpanded ? 'w-64 items-stretch px-4' : 'w-16 items-center px-2']">
+      <div :class="['mb-8 flex items-center justify-center rounded-xl bg-indigo-500 shadow-lg shadow-indigo-500/20', isSidebarExpanded ? 'h-12 w-full gap-3' : 'h-10 w-10 shrink-0']">
+        <Activity :size="isSidebarExpanded ? 28 : 24" class="text-white shrink-0" />
+        <span v-if="isSidebarExpanded" class="font-bold text-white text-lg tracking-wide">Oculus</span>
       </div>
-      <nav class="flex w-full flex-col gap-6 px-2">
-        <button class="group relative flex justify-center rounded-xl bg-slate-800 p-3 text-indigo-400">
-          <LayoutDashboard :size="20" />
+
+      <nav class="flex w-full flex-col gap-2">
+        <button :class="['group relative flex items-center rounded-xl p-3 transition-all', isSidebarExpanded ? 'justify-start gap-3' : 'justify-center', 'text-slate-400 hover:bg-slate-800 hover:text-white']">
+          <LayoutDashboard :size="20" class="shrink-0" />
+          <span v-if="isSidebarExpanded" class="font-medium text-sm">Dashboard</span>
         </button>
-        <button class="flex justify-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white">
-          <Bell :size="20" />
-        </button>
-        <button class="flex justify-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white">
-          <Terminal :size="20" />
+
+        <!-- Personas Menu -->
+        <div class="flex flex-col">
+          <button @click="isPersonasOpen = !isPersonasOpen; if (!isSidebarExpanded) isSidebarExpanded = true" :class="['group relative flex items-center rounded-xl p-3 transition-all', isSidebarExpanded ? 'justify-between' : 'justify-center', isPersonasOpen && isSidebarExpanded ? 'bg-slate-800 text-indigo-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white']">
+            <div class="flex items-center gap-3">
+              <Users :size="20" class="shrink-0" />
+              <span v-if="isSidebarExpanded" class="font-medium text-sm">Personas</span>
+            </div>
+            <ChevronDown v-if="isSidebarExpanded" :size="16" :class="{'rotate-180': isPersonasOpen}" class="transition-transform shrink-0" />
+          </button>
+          
+          <!-- Personas Submenu -->
+          <div v-if="isSidebarExpanded && isPersonasOpen" class="mt-2 flex flex-col gap-1 pl-10 pr-2 overflow-hidden transition-all">
+            <button class="flex items-center gap-2 rounded-lg py-2 px-2 text-sm text-indigo-400 font-medium bg-indigo-500/10">
+              <CalendarDays :size="16" class="shrink-0" /> Citas
+            </button>
+            <button class="flex items-center gap-2 rounded-lg py-2 px-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+              <HeartPulse :size="16" class="shrink-0" /> Pacientes
+            </button>
+            <button class="flex items-center gap-2 rounded-lg py-2 px-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+              <Target :size="16" class="shrink-0" /> Leads
+            </button>
+          </div>
+        </div>
+
+        <button :class="['group relative flex items-center rounded-xl p-3 transition-all text-slate-400 hover:bg-slate-800 hover:text-white', isSidebarExpanded ? 'justify-start gap-3' : 'justify-center']">
+          <Bell :size="20" class="shrink-0" />
+          <span v-if="isSidebarExpanded" class="font-medium text-sm">Notificaciones</span>
         </button>
       </nav>
-      <div class="mt-auto flex w-full flex-col gap-6 px-2">
-        <button class="flex justify-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white">
-          <Settings :size="20" />
+
+      <div class="mt-auto flex w-full flex-col gap-2">
+        <button @click="isSidebarExpanded = !isSidebarExpanded" :class="['flex items-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white', isSidebarExpanded ? 'justify-start gap-3' : 'justify-center']">
+          <PanelLeftClose v-if="isSidebarExpanded" :size="20" class="shrink-0" />
+          <PanelLeftOpen v-else :size="20" class="shrink-0" />
+          <span v-if="isSidebarExpanded" class="font-medium text-sm">Contraer</span>
+        </button>
+        <button :class="['flex items-center rounded-xl p-3 text-slate-400 transition-all hover:bg-slate-800 hover:text-white', isSidebarExpanded ? 'justify-start gap-3' : 'justify-center']">
+          <Settings :size="20" class="shrink-0" />
+          <span v-if="isSidebarExpanded" class="font-medium text-sm">Configuración</span>
         </button>
       </div>
     </aside>
@@ -58,7 +91,7 @@
         </div>
       </header>
 
-      <div class="flex-1 overflow-y-auto p-4 lg:p-8">
+      <div class="flex-1 overflow-y-auto p-4 lg:p-8 relative">
         <div class="mx-auto max-w-6xl pb-12">
           <div class="mb-6 flex items-end justify-between">
             <div>
@@ -154,6 +187,15 @@
                     </div>
 
                     <div class="flex items-center gap-1">
+                      <template v-if="cita.estado_cita === 'Nueva' || !cita.estado_cita">
+                        <button @click.stop="openAtender(cita)" class="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-200" title="Atender Cita">
+                          <CheckCircle2 :size="14" /> Atender
+                        </button>
+                        <button @click.stop="cancelarCita(cita)" class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-200 ml-1" title="Cancelar Cita">
+                          <XCircle :size="14" /> Cancelar
+                        </button>
+                        <div class="mx-2 h-4 w-px bg-slate-300"></div>
+                      </template>
                       <button class="rounded p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600" @click.stop title="Ver Detalles">
                         <Eye :size="16" />
                       </button>
@@ -272,6 +314,155 @@
         </div>
       </div>
     </main>
+
+    <!-- Modals Overlay -->
+    <div v-if="isAtenderModalOpen || isExamenModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      
+      <!-- Atender Modal -->
+      <div v-if="isAtenderModalOpen && activeCita" class="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-4">
+          <h2 class="flex items-center gap-2 text-lg font-bold text-slate-800"><Eye :size="20" class="text-indigo-500"/> Atender Cita</h2>
+          <button @click="closeAtender" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600"><X :size="20"/></button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+          <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+            <h3 class="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-3">📋 Datos del Paciente</h3>
+            <div class="space-y-2 text-sm text-slate-700">
+              <p><span class="font-semibold w-24 inline-block">Nombre:</span> {{ activeCita.nombre }}</p>
+              <p><span class="font-semibold w-24 inline-block">Teléfono:</span> {{ activeCita.telefono }}</p>
+              <p><span class="font-semibold w-24 inline-block">Edad:</span> {{ activeCita.edad ?? 'N/A' }} años</p>
+              <p><span class="font-semibold w-24 inline-block">Origen:</span> {{ activeCita.origen || 'Desconocido' }}</p>
+              <p><span class="font-semibold w-24 inline-block">Agendado:</span> {{ formatDate(activeCita.fecha_cita) }} - {{ activeCita.hora_cita || 'Sin hora' }}</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">📋 Respuestas del Quiz</h3>
+            <div class="space-y-2 text-sm text-slate-700">
+              <p><span class="font-semibold w-36 inline-block">Síntomas:</span> {{ formatSintomas(getSintomas(activeCita.respuestas)) || 'Ninguno' }}</p>
+              <p><span class="font-semibold w-36 inline-block">Visión lejos:</span> {{ activeCita.respuestas?.vision_lejos || 'N/A' }}</p>
+              <p><span class="font-semibold w-36 inline-block">Visión cerca:</span> {{ activeCita.respuestas?.vision_cerca || 'N/A' }}</p>
+              <p><span class="font-semibold w-36 inline-block">Problemas colores:</span> {{ activeCita.respuestas?.problemas_colores || 'N/A' }}</p>
+              <p v-if="activeCita.respuestas?.detalle_colores"><span class="font-semibold w-36 inline-block">Detalle colores:</span> {{ activeCita.respuestas.detalle_colores }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 flex justify-end gap-3">
+          <button @click="closeAtender" class="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 transition-colors">Cerrar</button>
+          <button @click="openExamen" class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"><ClipboardList :size="16"/> Agregar Examen</button>
+        </div>
+      </div>
+
+      <!-- Examen Modal -->
+      <div v-if="isExamenModalOpen && activeCita" class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-4">
+          <h2 class="flex items-center gap-2 text-lg font-bold text-slate-800"><ClipboardList :size="20" class="text-indigo-500"/> Agregar Examen Visual</h2>
+          <button @click="closeExamen" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600"><X :size="20"/></button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+          <h3 class="font-semibold text-slate-800 mb-6 border-b pb-2">Paciente: <span class="text-indigo-600">{{ activeCita.nombre }}</span></h3>
+          
+          <form @submit.prevent="guardarExamen" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha del Examen *</label>
+                <input type="date" v-model="examenForm.fecha_examen" required class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 border"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Próxima Revisión</label>
+                <input type="date" v-model="examenForm.proxima_revision" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 border"/>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div class="space-y-4">
+                <h4 class="font-bold text-sm text-slate-700">Ojo Derecho (OD)</h4>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1">Agudeza Visual</label>
+                  <input type="text" v-model="examenForm.agudeza_visual_od" placeholder="ej. 20/20" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1 font-semibold">Esfera *</label>
+                  <input type="number" step="0.25" v-model="examenForm.esfera_od" required class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1">Cilindro</label>
+                  <input type="number" step="0.25" v-model="examenForm.cilindro_od" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1">Eje (°)</label>
+                  <input type="number" v-model="examenForm.eje_od" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+              </div>
+              
+              <div class="space-y-4">
+                <h4 class="font-bold text-sm text-slate-700">Ojo Izquierdo (OI)</h4>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1">Agudeza Visual</label>
+                  <input type="text" v-model="examenForm.agudeza_visual_oi" placeholder="ej. 20/25" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1 font-semibold">Esfera *</label>
+                  <input type="number" step="0.25" v-model="examenForm.esfera_oi" required class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1">Cilindro</label>
+                  <input type="number" step="0.25" v-model="examenForm.cilindro_oi" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-600 mb-1">Eje (°)</label>
+                  <input type="number" v-model="examenForm.eje_oi" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Adición (Presbicia)</label>
+                <input type="number" step="0.25" v-model="examenForm.adicion" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">DIP (mm)</label>
+                <input type="number" v-model="examenForm.dip" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Presión Ocular (mmHg)</label>
+                <input type="number" v-model="examenForm.presion_ocular" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Diagnóstico</label>
+              <input type="text" v-model="examenForm.diagnostico" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"/>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Observaciones</label>
+                <textarea v-model="examenForm.observaciones" rows="3" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-600 mb-1">Recomendaciones</label>
+                <textarea v-model="examenForm.recomendaciones" rows="3" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-3 border"></textarea>
+              </div>
+            </div>
+
+          </form>
+        </div>
+        
+        <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 flex justify-end gap-3">
+          <button type="button" @click="closeExamen" class="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 transition-colors">Cancelar</button>
+          <button @click="guardarExamen" :disabled="savingExamen" class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors">
+            <RefreshCw v-if="savingExamen" class="animate-spin" :size="16"/>
+            <Save v-else :size="16"/> 
+            {{ savingExamen ? 'Guardando...' : 'Guardar Examen' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -295,7 +486,17 @@ import {
   Settings,
   Terminal,
   Info,
-  RefreshCw
+  RefreshCw,
+  X,
+  XCircle,
+  ClipboardList,
+  Save,
+  Users,
+  CalendarDays,
+  HeartPulse,
+  Target,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-vue-next'
 import { supabase, hasSupabaseConfig } from '@/supabase'
 
@@ -310,7 +511,7 @@ interface Respuestas {
 }
 
 interface Cita {
-  id: string
+  id: string | number
   nombre: string
   telefono: string
   edad: number | null
@@ -330,7 +531,38 @@ const error = ref('')
 
 const searchQuery = ref('')
 const sortBy = ref('recent')
-const expandedId = ref<string | null>(null)
+const expandedId = ref<string | number | null>(null)
+
+// Sidebar State
+const isSidebarExpanded = ref(true)
+const isPersonasOpen = ref(true)
+
+// Modal State
+const isAtenderModalOpen = ref(false)
+const isExamenModalOpen = ref(false)
+const activeCita = ref<Cita | null>(null)
+const savingExamen = ref(false)
+
+const createEmptyExamen = () => ({
+  fecha_examen: new Date().toISOString().split('T')[0],
+  agudeza_visual_od: '',
+  agudeza_visual_oi: '',
+  esfera_od: null as number | null,
+  esfera_oi: null as number | null,
+  cilindro_od: null as number | null,
+  cilindro_oi: null as number | null,
+  eje_od: null as number | null,
+  eje_oi: null as number | null,
+  adicion: null as number | null,
+  dip: null as number | null,
+  presion_ocular: null as number | null,
+  diagnostico: '',
+  observaciones: '',
+  recomendaciones: '',
+  proxima_revision: ''
+})
+
+const examenForm = ref(createEmptyExamen())
 
 const mockData: Cita[] = [
   {
@@ -405,8 +637,126 @@ const getSeverityConfig = (estado_cita: string | null) => {
   }
 }
 
-const toggleExpand = (id: string) => {
+const toggleExpand = (id: string | number) => {
   expandedId.value = expandedId.value === id ? null : id
+}
+
+function openAtender(cita: Cita) {
+  activeCita.value = cita
+  isAtenderModalOpen.value = true
+}
+
+function closeAtender() {
+  isAtenderModalOpen.value = false
+  activeCita.value = null
+}
+
+function openExamen() {
+  isAtenderModalOpen.value = false
+  examenForm.value = createEmptyExamen()
+  isExamenModalOpen.value = true
+}
+
+function closeExamen() {
+  isExamenModalOpen.value = false
+  activeCita.value = null
+}
+
+async function cancelarCita(cita: Cita) {
+  const confirmacion = window.confirm("¿Estás seguro de cancelar esta cita? El paciente será marcado como 'No asistió'.")
+  if (!confirmacion) return
+
+  loading.value = true
+  if (hasConfig) {
+    const { error: sbError } = await supabase
+      .from('leads')
+      .update({ estado_cita: 'NoAsistió' })
+      .eq('id', cita.id)
+      
+    if (sbError) {
+      alert(`Error al cancelar: ${sbError.message}`)
+    } else {
+      const idx = citas.value.findIndex(c => c.id === cita.id)
+      if (idx !== -1) citas.value[idx].estado_cita = 'NoAsistió'
+    }
+  } else {
+    const idx = citas.value.findIndex(c => c.id === cita.id)
+    if (idx !== -1) citas.value[idx].estado_cita = 'NoAsistió'
+  }
+  loading.value = false
+}
+
+async function guardarExamen() {
+  if (examenForm.value.esfera_od === null || examenForm.value.esfera_oi === null) {
+    alert("Las esferas (OD y OI) son obligatorias.")
+    return
+  }
+
+  if (!activeCita.value) return
+
+  savingExamen.value = true
+  if (hasConfig) {
+    // 1. Insert Paciente
+    const { data: pacienteData, error: pacError } = await supabase
+      .from('pacientes')
+      .insert({
+        lead_id: activeCita.value.id,
+        nombre: activeCita.value.nombre,
+        telefono: activeCita.value.telefono,
+        edad: activeCita.value.edad
+      })
+      .select('id')
+      .single()
+
+    if (pacError) {
+      alert(`Error al guardar paciente: ${pacError.message}`)
+      savingExamen.value = false
+      return
+    }
+
+    // Prepare data to handle empty strings for dates/numbers
+    const examToSave = { ...examenForm.value }
+    if (!examToSave.proxima_revision) {
+      (examToSave as any).proxima_revision = null
+    }
+
+    // 2. Insert Examen
+    const { error: examError } = await supabase
+      .from('historial_clinico')
+      .insert({
+        paciente_id: pacienteData.id,
+        ...examToSave
+      })
+
+    if (examError) {
+      alert(`Error al guardar examen: ${examError.message}`)
+      savingExamen.value = false
+      return
+    }
+
+    // 3. Update Lead
+    const { error: leadError } = await supabase
+      .from('leads')
+      .update({ estado_cita: 'Atendida' })
+      .eq('id', activeCita.value.id)
+
+    if (leadError) {
+      alert(`Error al actualizar estado de la cita: ${leadError.message}`)
+      savingExamen.value = false
+      return
+    }
+
+    // Actualizar UI localmente
+    const idx = citas.value.findIndex(c => c.id === activeCita.value!.id)
+    if (idx !== -1) citas.value[idx].estado_cita = 'Atendida'
+  } else {
+    // Modo mock
+    const idx = citas.value.findIndex(c => c.id === activeCita.value!.id)
+    if (idx !== -1) citas.value[idx].estado_cita = 'Atendida'
+  }
+
+  savingExamen.value = false
+  closeExamen()
 }
 
 const sortedCitas = computed(() => {
