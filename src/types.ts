@@ -1,4 +1,5 @@
 export interface QuizData {
+  leadId?: number
   nombre: string
   telefono: string
   edad: number | null

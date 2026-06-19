@@ -6,10 +6,15 @@
         <span class="text-4xl">✅</span>
       </div>
       <h2 class="text-2xl font-bold text-brand-dark mb-4">¡Cita agendada!</h2>
-      <p class="text-slate-500 mb-8 max-w-md">
-        Gracias por confiar en nosotros. Un asesor se comunicará contigo en las próximas 24 horas para confirmar tu cita. Revisa tu WhatsApp.
+      <p class="text-slate-500 mb-6 max-w-md">
+        Gracias por confiar en nosotros. Un asesor se comunicará contigo en las próximas 24 horas para confirmar tu cita.
       </p>
-      <button @click="$emit('restart')" class="btn-primary max-w-xs">
+
+      <a :href="whatsappLink" target="_blank" class="btn-primary w-full max-w-xs flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-4 shadow-lg shadow-[#25D366]/30">
+        <span class="text-xl">💬</span> Hablar con el especialista
+      </a>
+
+      <button @click="$emit('restart')" class="text-sm text-slate-400 underline hover:text-slate-600 mt-2">
         Volver al inicio
       </button>
     </div>
@@ -23,10 +28,15 @@
       <p class="text-slate-500 mb-4 max-w-md leading-relaxed">
         Detectamos que ya solicitaste una cita desde este dispositivo hace menos de 24 horas. Un asesor ya está en camino de contactarte.
       </p>
-      <p class="text-slate-400 text-sm mb-8 max-w-sm">
+      <p class="text-slate-400 text-sm mb-6 max-w-sm">
         Si no has recibido respuesta, escríbenos directamente por WhatsApp.
       </p>
-      <button @click="$emit('restart')" class="btn-primary max-w-xs">
+      
+      <a :href="whatsappLink" target="_blank" class="btn-primary w-full max-w-xs flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-4 shadow-lg shadow-[#25D366]/30">
+        <span class="text-xl">💬</span> Hablar por WhatsApp
+      </a>
+
+      <button @click="$emit('restart')" class="text-sm text-slate-400 underline hover:text-slate-600 mt-2">
         Volver al inicio
       </button>
     </div>
@@ -57,18 +67,40 @@
         Este test es orientativo y no reemplaza un examen profesional completo.
       </p>
     </div>
+
+    <!-- Exit Intent Popup -->
+    <div v-if="showExitPopup" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+      <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 relative">
+        <button @click="showExitPopup = false" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+          ✕
+        </button>
+        <div class="w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+          <span class="text-3xl">👋</span>
+        </div>
+        <h3 class="text-xl font-bold text-brand-dark mb-2">¡Espera un momento!</h3>
+        <p class="text-slate-500 mb-6 leading-relaxed text-sm">
+          Antes de irte, si tienes dudas sobre tus resultados, puedes conversarlas directamente con uno de nuestros especialistas vía WhatsApp. ¡Es rápido y sin compromiso!
+        </p>
+        <a :href="whatsappLink" target="_blank" @click="showExitPopup = false" class="btn-primary w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-3 shadow-lg shadow-[#25D366]/30">
+          <span class="text-xl">💬</span> Consultar ahora
+        </a>
+        <button @click="showExitPopup = false" class="text-sm text-slate-400 underline hover:text-slate-600 transition-colors mt-2">
+          Quizás más tarde
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import type { QuizData } from '@/types'
 import { supabase, hasSupabaseConfig } from '@/supabase'
+import { config } from '@/config'
 
 // ─── Constante de cooldown ──────────────────────────────────────────────────
 // Tiempo mínimo entre envíos desde el mismo dispositivo (en milisegundos).
-//const COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 horas
-const COOLDOWN_MS = 1 * 1 * 1 * 1 // 24 horas
+const COOLDOWN_MS = 1 * 1 * 1 * 1 // Test value, replace for prod
 const STORAGE_KEY = 'oculus_last_submission'
 
 const props = defineProps<{
@@ -83,17 +115,91 @@ const booked = ref(false)
 const submitting = ref(false)
 const submitError = ref('')
 const alreadySubmitted = ref(false)
+const showExitPopup = ref(false)
+const currentLeadId = ref<number | null>(null)
 
-// ─── Verificar si ya envió recientemente ────────────────────────────────────
-onMounted(() => {
+const whatsappLink = computed(() => {
+  return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(config.whatsappMessage)}`
+})
+
+// Exit Intent Detectors
+const handleMouseLeave = (e: MouseEvent) => {
+  if (e.clientY <= 0 && !booked.value && !alreadySubmitted.value && !submitting.value && !showExitPopup.value) {
+    showExitPopup.value = true
+  }
+}
+
+const handlePopState = (e: PopStateEvent) => {
+  if (!booked.value && !alreadySubmitted.value && !showExitPopup.value) {
+    showExitPopup.value = true
+    history.pushState(null, '', location.href) // prevent back navigation
+  }
+}
+
+// ─── Verificar si ya envió recientemente y guardar lead inicial ───────────
+onMounted(async () => {
+  // Configurar detectores de intención de salida
+  document.addEventListener('mouseleave', handleMouseLeave)
+  history.pushState(null, '', location.href)
+  window.addEventListener('popstate', handlePopState)
+
   const lastSubmission = localStorage.getItem(STORAGE_KEY)
   if (lastSubmission) {
     const elapsed = Date.now() - parseInt(lastSubmission, 10)
     if (elapsed < COOLDOWN_MS) {
       alreadySubmitted.value = true
+      return // No registramos lead inicial si ya tiene uno pendiente reciente
     }
   }
+
+  // Guardado inmediato de la información
+  await saveLeadImmediately()
 })
+
+onUnmounted(() => {
+  document.removeEventListener('mouseleave', handleMouseLeave)
+  window.removeEventListener('popstate', handlePopState)
+})
+
+async function saveLeadImmediately() {
+  if (!hasSupabaseConfig) return;
+
+  const payload = {
+    nombre: props.quizData.nombre,
+    telefono: props.quizData.telefono,
+    edad: props.quizData.edad,
+    respuestas: {
+      sintomas: props.quizData.sintomas,
+      vision_lejos: props.quizData.visionLejos,
+      vision_cerca: props.quizData.visionCerca,
+      problemas_colores: props.quizData.problemasColores,
+      detalle_colores: props.quizData.detalleColores,
+    },
+    resultado: resultMessage.value,
+    utm_source: props.quizData.utmSource || null,
+    utm_medium: props.quizData.utmMedium || null,
+    utm_campaign: props.quizData.utmCampaign || null,
+    estado: 'Viendo Resultados',
+  };
+
+  try {
+    if (props.quizData.leadId) {
+      currentLeadId.value = props.quizData.leadId;
+      const response = await supabase.from('leads').update(payload).eq('id', currentLeadId.value);
+      if (!response.error) {
+        console.log('[DEBUG-BOOK] Actualización de lead existente exitosa, ID:', currentLeadId.value);
+      }
+    } else {
+      const response = await supabase.from('leads').insert(payload).select('id').single();
+      if (!response.error && response.data) {
+        currentLeadId.value = response.data.id;
+        console.log('[DEBUG-BOOK] Guardado inmediato exitoso, ID:', currentLeadId.value);
+      }
+    }
+  } catch (err) {
+    console.error('[DEBUG-BOOK] Error guardando registro inicial', err);
+  }
+}
 
 const resultMessage = computed(() => {
   const { sintomas, visionLejos, visionCerca, problemasColores } = props.quizData
@@ -151,14 +257,24 @@ async function handleBook() {
     utm_source: props.quizData.utmSource || null,
     utm_medium: props.quizData.utmMedium || null,
     utm_campaign: props.quizData.utmCampaign || null,
-    estado: 'Nuevo',
+    estado: 'Agendado',
+    estado_cita: 'Nueva',
   };
 
-  console.log('[DEBUG-BOOK] Payload a insertar en tabla "leads":', JSON.stringify(payload, null, 2));
+  console.log('[DEBUG-BOOK] Payload a insertar/actualizar en tabla "leads":', JSON.stringify(payload, null, 2));
 
   try {
-    const response = await supabase.from('leads').insert(payload);
-    console.log('[DEBUG-BOOK] Respuesta cruda de Supabase:', response);
+    let response;
+    if (currentLeadId.value) {
+      // Actualizamos el registro que guardamos inicialmente
+      response = await supabase
+        .from('leads')
+        .update({ estado: 'Agendado', estado_cita: 'Nueva' })
+        .eq('id', currentLeadId.value);
+    } else {
+      // Fallback por si falló el guardado inicial
+      response = await supabase.from('leads').insert(payload);
+    }
 
     const { error } = response;
 
@@ -166,7 +282,7 @@ async function handleBook() {
       console.error('[DEBUG-BOOK] Error retornado por Supabase:', error);
       submitError.value = `Error de base de datos (Supabase): [${error.code}] ${error.message} - ${error.details || ''}`;
     } else {
-      console.log('[DEBUG-BOOK] Inserción exitosa sin errores.');
+      console.log('[DEBUG-BOOK] Actualización/Inserción exitosa sin errores.');
       // ─── Guardar timestamp en localStorage ──────────────────────────────
       localStorage.setItem(STORAGE_KEY, Date.now().toString());
       booked.value = true;

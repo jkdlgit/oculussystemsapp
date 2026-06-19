@@ -62,6 +62,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { supabase, hasSupabaseConfig } from '@/supabase'
 import type { QuizData } from '@/types'
 import ProgressBar from '@/components/ProgressBar.vue'
 import Step0Welcome from '@/components/Step0Welcome.vue'
@@ -94,11 +95,32 @@ onMounted(() => {
   quiz.utmCampaign = params.get('utm_campaign') || ''
 })
 
-function handleStep1(data: { nombre: string; telefono: string; edad: number }) {
+async function handleStep1(data: { nombre: string; telefono: string; edad: number }) {
   quiz.nombre = data.nombre
   quiz.telefono = data.telefono
   quiz.edad = data.edad
   step.value = 2
+
+  if (hasSupabaseConfig && !quiz.leadId) {
+    const payload = {
+      nombre: quiz.nombre,
+      telefono: quiz.telefono,
+      edad: quiz.edad,
+      respuestas: {},
+      utm_source: quiz.utmSource || null,
+      utm_medium: quiz.utmMedium || null,
+      utm_campaign: quiz.utmCampaign || null,
+      estado: 'Nuevo',
+    };
+    try {
+      const { data: leadData, error } = await supabase.from('leads').insert(payload).select('id').single();
+      if (!error && leadData) {
+        quiz.leadId = leadData.id;
+      }
+    } catch (err) {
+      console.error('[DEBUG-QUIZ] Error al guardar inicio del quiz', err);
+    }
+  }
 }
 
 function handleStep2(sintomas: string[]) {
@@ -119,6 +141,7 @@ function handleStep4(data: { problema: string; detalle: string }) {
 }
 
 function handleRestart() {
+  quiz.leadId = undefined
   quiz.nombre = ''
   quiz.telefono = ''
   quiz.edad = null

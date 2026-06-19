@@ -50,6 +50,14 @@ DROP POLICY IF EXISTS "Permitir insercion anonima de leads dev" ON dev.leads;
 CREATE POLICY "Permitir insercion anonima de leads dev"
   ON dev.leads FOR INSERT TO anon WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Permitir lectura anonima de leads dev" ON dev.leads;
+CREATE POLICY "Permitir lectura anonima de leads dev"
+  ON dev.leads FOR SELECT TO anon USING (true);
+
+DROP POLICY IF EXISTS "Permitir actualizacion anonima de leads dev" ON dev.leads;
+CREATE POLICY "Permitir actualizacion anonima de leads dev"
+  ON dev.leads FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
 DROP POLICY IF EXISTS "Solo autenticados pueden leer leads dev" ON dev.leads;
 CREATE POLICY "Solo autenticados pueden leer leads dev"
   ON dev.leads FOR SELECT TO authenticated USING (true);
@@ -103,6 +111,14 @@ ALTER TABLE pro.leads ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Permitir insercion anonima de leads pro" ON pro.leads;
 CREATE POLICY "Permitir insercion anonima de leads pro"
   ON pro.leads FOR INSERT TO anon WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir lectura anonima de leads pro" ON pro.leads;
+CREATE POLICY "Permitir lectura anonima de leads pro"
+  ON pro.leads FOR SELECT TO anon USING (true);
+
+DROP POLICY IF EXISTS "Permitir actualizacion anonima de leads pro" ON pro.leads;
+CREATE POLICY "Permitir actualizacion anonima de leads pro"
+  ON pro.leads FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Solo autenticados pueden leer leads pro" ON pro.leads;
 CREATE POLICY "Solo autenticados pueden leer leads pro"
