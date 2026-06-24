@@ -46,13 +46,13 @@
         </select>
       </div>
 
-      <!-- Especialista -->
+      <!-- Owner -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">Especialista</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Owner</label>
         <select v-model="filters.especialista" class="w-full bg-slate-50 border border-slate-200 text-slate-700 py-2 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer">
-          <option>Todos</option>
-          <option>Especialista 1</option>
-          <option>Especialista 2</option>
+          <option value="Todos">Todos</option>
+          <option value="publicidad">Publicidad</option>
+          <option value="especialista">Especialista</option>
         </select>
       </div>
 

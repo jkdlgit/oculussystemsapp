@@ -80,10 +80,10 @@ export function useAnalyticsData() {
     }
 
     try {
-      let leadsQuery = supabase.from('leads').select('id, created_at, fecha_cita, estado_cita, origen, estado');
+      let leadsQuery = supabase.from('leads').select('id, created_at, fecha_cita, estado_cita, origen, estado, owner');
       let historialQuery = supabase.from('historial_clinico').select('id, created_at, paciente_id');
       let pedidosQuery = supabase.from('pedidos').select('id, created_at, total, estado_pago, estado_pedido, paciente_id');
-      let pacientesQuery = supabase.from('pacientes').select('id, lead_id');
+      let pacientesQuery = supabase.from('pacientes').select('id, lead_id, owner');
 
       // Aplica filtros en Supabase donde sea posible
       if (filters) {
@@ -102,6 +102,9 @@ export function useAnalyticsData() {
         }
         if (filters.estado && filters.estado !== 'Todos') {
           leadsQuery = leadsQuery.eq('estado_cita', filters.estado);
+        }
+        if (filters.especialista && filters.especialista !== 'Todos') {
+          leadsQuery = leadsQuery.eq('owner', filters.especialista);
         }
       }
 
@@ -122,9 +125,9 @@ export function useAnalyticsData() {
       let pedidos = pedidosRes.data || [];
       const pacientes = pacientesRes.data || [];
 
-      // Si hay un filtro de origen aplicado en leads, debemos propagarlo hacia pacientes y pedidos
+      // Si hay un filtro de origen u owner (especialista) aplicado en leads, debemos propagarlo hacia pacientes y pedidos
       // Para asegurarnos de medir *sólo* las ventas de esos leads filtrados.
-      if (filters && filters.origen && filters.origen !== 'Todos') {
+      if (filters && ((filters.origen && filters.origen !== 'Todos') || (filters.especialista && filters.especialista !== 'Todos'))) {
         const validLeadIds = new Set(leads.map(l => l.id));
         const validPacienteIds = new Set(pacientes.filter(p => p.lead_id && validLeadIds.has(p.lead_id)).map(p => p.id));
         

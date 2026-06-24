@@ -11,6 +11,7 @@ export interface QuizData {
   utmSource: string
   utmMedium: string
   utmCampaign: string
+  owner?: string
 }
 
 export const sintomasOpciones = [

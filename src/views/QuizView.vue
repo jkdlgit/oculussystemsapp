@@ -86,6 +86,7 @@ const quiz = reactive<QuizData>({
   utmSource: '',
   utmMedium: '',
   utmCampaign: '',
+  owner: '',
 })
 
 onMounted(() => {
@@ -93,6 +94,8 @@ onMounted(() => {
   quiz.utmSource = params.get('utm_source') || ''
   quiz.utmMedium = params.get('utm_medium') || ''
   quiz.utmCampaign = params.get('utm_campaign') || ''
+  const ownerParam = params.get('owner')
+  quiz.owner = ownerParam === 'especialista' ? 'especialista' : 'publicidad'
 })
 
 async function handleStep1(data: { nombre: string; telefono: string; edad: number }) {
@@ -111,6 +114,7 @@ async function handleStep1(data: { nombre: string; telefono: string; edad: numbe
       utm_medium: quiz.utmMedium || null,
       utm_campaign: quiz.utmCampaign || null,
       estado: 'Nuevo',
+      owner: quiz.owner || 'publicidad',
     };
     try {
       const { data: leadData, error } = await supabase.from('leads').insert(payload).select('id').single();

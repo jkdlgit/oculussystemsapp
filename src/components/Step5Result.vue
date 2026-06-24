@@ -180,6 +180,7 @@ async function saveLeadImmediately() {
     utm_medium: props.quizData.utmMedium || null,
     utm_campaign: props.quizData.utmCampaign || null,
     estado: 'Viendo Resultados',
+    owner: props.quizData.owner || 'publicidad',
   };
 
   try {
@@ -259,6 +260,7 @@ async function handleBook() {
     utm_campaign: props.quizData.utmCampaign || null,
     estado: 'Agendado',
     estado_cita: 'Nueva',
+    owner: props.quizData.owner || 'publicidad',
   };
 
   console.log('[DEBUG-BOOK] Payload a insertar/actualizar en tabla "leads":', JSON.stringify(payload, null, 2));

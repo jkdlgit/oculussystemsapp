@@ -97,7 +97,7 @@
       </header>
 
       <div class="flex-1 overflow-y-auto p-4 lg:p-8 relative">
-        <div class="mx-auto max-w-6xl pb-12">
+        <div class="mx-auto w-full max-w-[1600px] pb-12">
 
           <!-- Header del area principal -->
           <div class="mb-6 flex items-end justify-between">
@@ -152,6 +152,10 @@
                       </div>
                       
                       <div class="flex items-center gap-3">
+                        <span v-if="cita.owner" :class="[
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                          cita.owner === 'publicidad' ? 'bg-violet-100 text-violet-700 border border-violet-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                        ]">{{ cita.owner }}</span>
                         <div class="flex flex-col items-end">
                           <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Reserva generada</span>
                           <span class="text-sm font-bold text-slate-700">{{ formatDateTime(cita.created_at) }}</span>
@@ -268,7 +272,8 @@
               <p class="mt-1 text-sm text-slate-500">Los pacientes aparecen aquí después de ser atendidos.</p>
             </div>
             <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table class="w-full text-sm">
+              <div class="overflow-x-auto w-full">
+                <table class="w-full text-sm">
                 <thead class="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">#</th>
@@ -276,6 +281,7 @@
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Nombre</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Teléfono</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Edad</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Owner</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Registrado</th>
                   </tr>
                 </thead>
@@ -293,6 +299,13 @@
                       <a :href="`https://wa.me/${cleanPhone(pac.telefono || '')}`" target="_blank" class="text-indigo-600 hover:underline font-medium">{{ pac.telefono || '—' }}</a>
                     </td>
                     <td class="px-4 py-3 text-slate-700">{{ pac.edad ? pac.edad + ' años' : '—' }}</td>
+                    <td class="px-4 py-3">
+                      <span v-if="pac.owner" :class="[
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                        pac.owner === 'publicidad' ? 'bg-violet-100 text-violet-700 border border-violet-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                      ]">{{ pac.owner }}</span>
+                      <span v-else class="text-slate-400 text-xs">—</span>
+                    </td>
                     <td class="px-4 py-3 text-slate-500 font-mono text-xs">
                       <div class="flex items-center justify-between">
                         {{ formatDateTime(pac.created_at) }}
@@ -304,6 +317,7 @@
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
@@ -335,6 +349,7 @@
               </div>
               <!-- Tabla -->
               <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="overflow-x-auto w-full">
                 <table class="w-full text-sm">
                   <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
@@ -344,6 +359,7 @@
                       <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Fecha Cita</th>
                       <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Hora</th>
                       <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Origen</th>
+                      <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Owner</th>
                       <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Estado</th>
                       <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Registrado</th>
                     </tr>
@@ -366,6 +382,13 @@
                         <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">{{ lead.origen || 'Quiz' }}</span>
                       </td>
                       <td class="px-4 py-3">
+                        <span v-if="lead.owner" :class="[
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                          lead.owner === 'publicidad' ? 'bg-violet-100 text-violet-700 border border-violet-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                        ]">{{ lead.owner }}</span>
+                        <span v-else class="text-slate-400 text-xs">—</span>
+                      </td>
+                      <td class="px-4 py-3">
                         <span :class="[
                           'inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold min-w-[72px] text-center',
                           lead.estado_cita === 'Nueva' || !lead.estado_cita ? 'bg-emerald-100 text-emerald-700' :
@@ -377,6 +400,7 @@
                     </tr>
                   </tbody>
                 </table>
+                </div>
               </div>
               <!-- Controles de paginación inferiores -->
               <div class="flex items-center justify-end gap-2">
@@ -402,11 +426,13 @@
               <p class="mt-1 text-sm text-slate-500">Los pedidos aparecerán aquí cuando generes ventas.</p>
             </div>
             <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table class="w-full text-sm">
+              <div class="overflow-x-auto w-full">
+                <table class="w-full text-sm">
                 <thead class="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Pedido</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Paciente</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Owner</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Armazón</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Total</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Faltante</th>
@@ -421,6 +447,13 @@
                   <tr v-for="ped in filteredPedidos" :key="ped.id" class="hover:bg-slate-50 transition-colors">
                     <td class="px-4 py-3 font-mono text-xs font-bold text-slate-600">{{ ped.numero_pedido }}</td>
                     <td class="px-4 py-3 font-semibold text-slate-800">{{ ped.pacientes?.nombre || 'Desconocido' }}</td>
+                    <td class="px-4 py-3">
+                      <span v-if="ped.owner" :class="[
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                        ped.owner === 'publicidad' ? 'bg-violet-100 text-violet-700 border border-violet-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                      ]">{{ ped.owner }}</span>
+                      <span v-else class="text-slate-400 text-xs">—</span>
+                    </td>
                     <td class="px-4 py-3 text-slate-600">{{ ped.marca_armazon }} {{ ped.modelo_armazon }}</td>
                     <td class="px-4 py-3 font-mono font-bold text-emerald-600">${{ ped.total }}</td>
                     <td class="px-4 py-3 font-mono font-bold text-red-500">
@@ -458,6 +491,7 @@
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
@@ -483,6 +517,13 @@
               <p><span class="font-semibold w-28 inline-block">Teléfono:</span> {{ activeCita.telefono }}</p>
               <p><span class="font-semibold w-28 inline-block">Edad:</span> {{ activeCita.edad ?? 'N/A' }} años</p>
               <p><span class="font-semibold w-28 inline-block">Origen:</span> {{ activeCita.origen || 'Desconocido' }}</p>
+              <p class="flex items-center gap-2"><span class="font-semibold w-28 inline-block">Owner:</span>
+                <span v-if="activeCita.owner" :class="[
+                  'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                  activeCita.owner === 'publicidad' ? 'bg-violet-100 text-violet-700 border border-violet-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                ]">{{ activeCita.owner }}</span>
+                <span v-else class="text-slate-400 text-sm">—</span>
+              </p>
               <p><span class="font-semibold w-28 inline-block">Agendado:</span> {{ formatDate(activeCita.fecha_cita) }} - {{ activeCita.hora_cita || 'Sin hora' }}</p>
             </div>
           </div>
@@ -1111,6 +1152,7 @@ interface Cita {
   hora_cita: string | null
   estado_cita: string | null
   origen: string | null
+  owner: string | null
   created_at: string
 }
 
@@ -1121,6 +1163,7 @@ interface Paciente {
   nombre: string
   telefono: string | null
   edad: number | null
+  owner: string | null
   created_at: string
   pedidos?: { id: string }[]
   historial_clinico?: { id: string }[]
@@ -1160,6 +1203,7 @@ interface PedidoListado {
   tipo_entrega: string
   estado_pedido: string
   fecha_pedido: string
+  owner: string | null
 }
 
 const citas = ref<Cita[]>([])
@@ -1533,6 +1577,7 @@ const mockData: Cita[] = [
     hora_cita: '10:00:00',
     estado_cita: 'Nueva',
     origen: 'Quiz',
+    owner: 'publicidad',
     created_at: new Date().toISOString(),
   },
   {
@@ -1547,6 +1592,7 @@ const mockData: Cita[] = [
     hora_cita: '11:30:00',
     estado_cita: 'Atendida',
     origen: 'Quiz',
+    owner: 'especialista',
     created_at: new Date(Date.now() - 86400000).toISOString(),
   },
   {
@@ -1561,6 +1607,7 @@ const mockData: Cita[] = [
     hora_cita: '09:00:00',
     estado_cita: 'NoAsistió',
     origen: 'Quiz',
+    owner: 'publicidad',
     created_at: new Date(Date.now() - 172800000).toISOString(),
   },
 ]
@@ -1673,7 +1720,8 @@ async function guardarExamen() {
         cedula: cedulaInput.value,
         nombre: activeCita.value.nombre,
         telefono: activeCita.value.telefono,
-        edad: activeCita.value.edad
+        edad: activeCita.value.edad,
+        owner: activeCita.value.owner || 'publicidad'
       })
       .select('id')
       .single()
@@ -1814,7 +1862,8 @@ async function guardarPedido() {
             cedula: cedulaInput.value,
             nombre: activeCita.value!.nombre,
             telefono: activeCita.value!.telefono,
-            edad: activeCita.value!.edad
+            edad: activeCita.value!.edad,
+            owner: activeCita.value!.owner || 'publicidad'
           })
           .select('id')
           .single()
@@ -1831,6 +1880,7 @@ async function guardarPedido() {
       const pedidoPayload = {
         paciente_id: pacienteId,
         lead_id: activeCita.value!.id,
+        owner: activeCita.value!.owner || 'publicidad',
         numero_pedido: `PED-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
         fecha_pedido: new Date().toISOString().split('T')[0],
         tipo_entrega: formPedido.value.tipo_entrega,
@@ -2006,7 +2056,7 @@ async function fetchCitas() {
     const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const { data, error: sbError } = await supabase
       .from('leads')
-      .select('id, nombre, telefono, edad, respuestas, resultado, estado, fecha_cita, hora_cita, estado_cita, origen, created_at')
+      .select('id, nombre, telefono, edad, respuestas, resultado, estado, fecha_cita, hora_cita, estado_cita, origen, owner, created_at')
       .gte('created_at', hace24h)
       .order('created_at', { ascending: false })
 
@@ -2036,7 +2086,7 @@ async function fetchPacientes() {
   try {
     const { data, error: sbError } = await supabase
       .from('pacientes')
-      .select('id, lead_id, cedula, nombre, telefono, edad, created_at, pedidos(id), historial_clinico(id)')
+      .select('id, lead_id, owner, cedula, nombre, telefono, edad, created_at, pedidos(id), historial_clinico(id)')
       .order('created_at', { ascending: false })
     if (sbError) {
       error.value = `Error al cargar pacientes: ${sbError.message}`
@@ -2064,7 +2114,7 @@ async function fetchTodosLosLeads() {
   try {
     const { data, error: sbError } = await supabase
       .from('leads')
-      .select('id, nombre, telefono, edad, respuestas, resultado, estado, fecha_cita, hora_cita, estado_cita, origen, created_at')
+      .select('id, nombre, telefono, edad, respuestas, resultado, estado, fecha_cita, hora_cita, estado_cita, origen, owner, created_at')
       .order('created_at', { ascending: false })
     if (sbError) {
       error.value = `Error al cargar leads: ${sbError.message}`
@@ -2092,7 +2142,7 @@ async function fetchPedidos() {
   try {
     const { data, error: sbError } = await supabase
       .from('pedidos')
-      .select('id, numero_pedido, paciente_id, pacientes(id, nombre, historial_clinico(id)), marca_armazon, modelo_armazon, total, monto_pagado, estado_pago, tipo_entrega, estado_pedido, fecha_pedido')
+      .select('id, numero_pedido, paciente_id, owner, pacientes(id, nombre, historial_clinico(id)), marca_armazon, modelo_armazon, total, monto_pagado, estado_pago, tipo_entrega, estado_pedido, fecha_pedido')
       .order('fecha_pedido', { ascending: false })
       .order('created_at', { ascending: false })
     if (sbError) {

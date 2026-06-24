@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS dev.leads (
   utm_medium    TEXT,
   utm_campaign  TEXT,
   estado        TEXT NOT NULL DEFAULT 'Nuevo',
+  owner         TEXT DEFAULT 'publicidad',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -92,6 +93,7 @@ CREATE TABLE IF NOT EXISTS pro.leads (
   utm_medium    TEXT,
   utm_campaign  TEXT,
   estado        TEXT NOT NULL DEFAULT 'Nuevo',
+  owner         TEXT DEFAULT 'publicidad',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
