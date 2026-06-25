@@ -52,19 +52,6 @@
       </div>
     </div>
 
-    <!-- Ingresos (Ventas en $) -->
-    <div class="bg-pink-50 rounded-xl p-4 shadow-sm border border-pink-100 flex flex-col hover:shadow-md transition-shadow">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-pink-800 font-medium text-sm">Ingresos</span>
-        <span class="text-xl">💰</span>
-      </div>
-      <div class="text-2xl font-bold text-slate-800 mb-1">${{ data.ventas.toLocaleString() }}</div>
-      <div class="flex items-center text-xs font-medium text-emerald-600">
-        <span>▲ 22%</span>
-        <span class="text-slate-400 ml-1 font-normal">vs mes ant.</span>
-      </div>
-    </div>
-
     <!-- Nº Ventas -->
     <div class="bg-teal-50 rounded-xl p-4 shadow-sm border border-teal-100 flex flex-col hover:shadow-md transition-shadow">
       <div class="flex items-center justify-between mb-2">
@@ -74,6 +61,19 @@
       <div class="text-2xl font-bold text-slate-800 mb-1">{{ data.ventas_count.toLocaleString() }}</div>
       <div class="flex items-center text-xs font-medium text-emerald-600">
         <span>▲ 15%</span>
+        <span class="text-slate-400 ml-1 font-normal">vs mes ant.</span>
+      </div>
+    </div>
+
+    <!-- Ingresos (Ventas en $) -->
+    <div class="bg-pink-50 rounded-xl p-4 shadow-sm border border-pink-100 flex flex-col hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-pink-800 font-medium text-sm">Ingresos</span>
+        <span class="text-xl">💰</span>
+      </div>
+      <div class="text-2xl font-bold text-slate-800 mb-1">${{ data.ventas.toLocaleString() }}</div>
+      <div class="flex items-center text-xs font-medium text-emerald-600">
+        <span>▲ 22%</span>
         <span class="text-slate-400 ml-1 font-normal">vs mes ant.</span>
       </div>
     </div>
