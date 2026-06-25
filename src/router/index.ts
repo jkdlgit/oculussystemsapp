@@ -8,8 +8,17 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/quiz1',
+    },
+    {
+      path: '/quiz1',
       name: 'quiz',
       component: QuizView,
+    },
+    {
+      path: '/visioncheck1',
+      name: 'visioncheck',
+      component: () => import('@/views/VisionCheckView.vue'),
     },
     {
       path: '/dashboard',

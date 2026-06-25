@@ -22,7 +22,9 @@
         <label class="block text-xs font-medium text-slate-500 mb-1">Origen</label>
         <select v-model="filters.origen" class="w-full bg-slate-50 border border-slate-200 text-slate-700 py-2 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer">
           <option>Todos</option>
-          <option>Quiz</option>
+          <option value="quiz1">quiz1</option>
+          <option value="visioncheck1">visioncheck1</option>
+          <option value="Quiz">Quiz (Antiguo)</option>
           <option>WhatsApp</option>
           <option>Facebook</option>
           <option>Google</option>

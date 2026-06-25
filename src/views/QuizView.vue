@@ -114,6 +114,7 @@ async function handleStep1(data: { nombre: string; telefono: string; edad: numbe
       utm_medium: quiz.utmMedium || null,
       utm_campaign: quiz.utmCampaign || null,
       estado: 'Nuevo',
+      origen: 'quiz1',
       owner: quiz.owner || 'publicidad',
     };
     try {
