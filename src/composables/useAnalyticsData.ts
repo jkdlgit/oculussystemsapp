@@ -135,14 +135,16 @@ export function useAnalyticsData() {
         pedidos = pedidos.filter(p => validPacienteIds.has(p.paciente_id));
       }
 
-      // 1. Visitas (Entradas al quiz reales)
+      // 1. Visitas: entradas a quiz1 O visioncheck1 (cualquier lead creado)
       const visitasCount = leads.length;
 
-      // 2. Quizzes Completados (Llegaron a resultados)
+      // 2. Flujo completado: llegaron a ver resultados/completaron el test
+      //    - quiz1: estado pasa a 'Viendo Resultados' al llegar al Step5Result
+      //    - visioncheck1: estado pasa a 'Viendo Resultados' al completar VCPrueba
       const quizzesCompletados = leads.filter(l => l.estado && l.estado !== 'Nuevo');
       const quizzesCount = quizzesCompletados.length;
 
-      // 2. Reservas agendadas (detecta estado_cita O estado del quiz)
+      // 3. Reservas agendadas: estado_cita atendida O estado === 'Agendado'
       const reservas = leads.filter(l => 
         l.fecha_cita || 
         (l.estado_cita && l.estado_cita !== 'Nueva') ||
@@ -186,8 +188,8 @@ export function useAnalyticsData() {
       };
 
       const funnelData: FunnelStage[] = [
-        { etapa: 1, nombre: "Entrada al quiz", cantidad: visitasCount, porcentaje: 100 },
-        { etapa: 2, nombre: "Quiz completado", cantidad: quizzesCount, porcentaje: formatPorcentaje(quizzesCount, visitasCount) },
+        { etapa: 1, nombre: "Entrada (quiz / test)", cantidad: visitasCount, porcentaje: 100 },
+        { etapa: 2, nombre: "Flujo completado", cantidad: quizzesCount, porcentaje: formatPorcentaje(quizzesCount, visitasCount) },
         { etapa: 3, nombre: "Reserva agendada", cantidad: reservasCount, porcentaje: formatPorcentaje(reservasCount, visitasCount) },
         { etapa: 4, nombre: "Llegaron al local", cantidad: llegaronCount, porcentaje: formatPorcentaje(llegaronCount, visitasCount) },
         { etapa: 5, nombre: "Examen realizado", cantidad: examenesCount, porcentaje: formatPorcentaje(examenesCount, visitasCount) },
@@ -197,8 +199,8 @@ export function useAnalyticsData() {
       ];
 
       const abandonoData: Abandono[] = [
-        { transicion: "Quiz → Completado", entraron: visitasCount, perdidos: visitasCount - quizzesCount, porcentaje: formatPorcentaje(visitasCount - quizzesCount, visitasCount), accion: "Mejorar UX del quiz" },
-        { transicion: "Quiz → Reserva", entraron: quizzesCount, perdidos: quizzesCount - reservasCount, porcentaje: formatPorcentaje(quizzesCount - reservasCount, quizzesCount), accion: "Incentivar reserva" },
+        { transicion: "Entrada → Flujo completado", entraron: visitasCount, perdidos: visitasCount - quizzesCount, porcentaje: formatPorcentaje(visitasCount - quizzesCount, visitasCount), accion: "Mejorar UX del quiz / test" },
+        { transicion: "Flujo → Reserva", entraron: quizzesCount, perdidos: quizzesCount - reservasCount, porcentaje: formatPorcentaje(quizzesCount - reservasCount, quizzesCount), accion: "Incentivar reserva" },
         { transicion: "Reserva → Llegaron", entraron: reservasCount, perdidos: reservasCount - llegaronCount, porcentaje: formatPorcentaje(reservasCount - llegaronCount, reservasCount), accion: "Recordatorios WhatsApp" },
         { transicion: "Llegaron → Examen", entraron: llegaronCount, perdidos: llegaronCount - examenesCount, porcentaje: formatPorcentaje(llegaronCount - examenesCount, llegaronCount), accion: "Revisar proceso clínico" },
         { transicion: "Examen → Pedido", entraron: examenesCount, perdidos: examenesCount - pedidosCount, porcentaje: formatPorcentaje(examenesCount - pedidosCount, examenesCount), accion: "Mejorar ofertas" },

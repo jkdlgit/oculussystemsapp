@@ -50,10 +50,16 @@ onMounted(() => {
 async function handleStart() {
   step.value = 1
   
-  // Registrar la visita inmediatamente de forma anónima
+  // Registrar la visita inmediatamente de forma anónima.
+  // NOTA: nombre, telefono y edad son NOT NULL en la BD → se usan placeholders.
+  // Se actualizan con datos reales cuando el usuario llena el formulario (VCFormulario).
   if (hasSupabaseConfig && !leadId.value) {
     const params = new URLSearchParams(window.location.search)
     const payload = {
+      nombre: 'Visita Anónima',
+      telefono: 'Sin registrar',
+      edad: 0,
+      respuestas: {},
       estado: 'Nuevo',
       origen: 'visioncheck1',
       owner: owner.value,
@@ -65,16 +71,33 @@ async function handleStart() {
       const { data, error } = await supabase.from('leads').insert(payload).select('id').single();
       if (!error && data) {
         leadId.value = data.id;
+        console.log('[VC] Visita registrada, leadId:', data.id);
+      } else if (error) {
+        console.error('[VC] Error registrando visita:', error.message);
       }
     } catch (err) {
-      console.error('Error guardando inicio de VisiónCheck', err);
+      console.error('[VC] Error guardando inicio de VisiónCheck', err);
     }
   }
 }
 
-function handleTestFinish(score: string) {
+async function handleTestFinish(score: string) {
   acuityScore.value = score
   step.value = 2
+
+  // Actualizar estado a 'Viendo Resultados' para que el analytics cuente
+  // esta visita como "prueba completada" (estado !== 'Nuevo')
+  if (hasSupabaseConfig && leadId.value) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Viendo Resultados',
+        respuestas: { visionCheck_score: score }
+      }).eq('id', leadId.value)
+      console.log('[VC] Prueba completada, score:', score)
+    } catch (err) {
+      console.error('[VC] Error actualizando estado tras prueba', err)
+    }
+  }
 }
 
 function handleFormSubmit() {

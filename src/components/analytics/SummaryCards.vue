@@ -13,10 +13,10 @@
       </div>
     </div>
 
-    <!-- Quizzes -->
+    <!-- Quizzes / Test completados -->
     <div class="bg-emerald-50 rounded-xl p-4 shadow-sm border border-emerald-100 flex flex-col hover:shadow-md transition-shadow">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-emerald-800 font-medium text-sm">Quizzes</span>
+        <span class="text-emerald-800 font-medium text-sm">Completados</span>
         <span class="text-xl">📝</span>
       </div>
       <div class="text-2xl font-bold text-slate-800 mb-1">{{ data.quizzes.toLocaleString() }}</div>

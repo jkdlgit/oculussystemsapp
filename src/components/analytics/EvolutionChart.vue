@@ -56,7 +56,7 @@ const chartData = computed(() => {
         tension: 0.4
       },
       {
-        label: 'Quizzes',
+        label: 'Completados',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         borderColor: '#10b981',
         pointBackgroundColor: '#10b981',
