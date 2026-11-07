@@ -96,16 +96,18 @@
       eventName
     );
 
-    // Enviar a la API local de Pulso si está disponible
-    try {
-      fetch(PULSO_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        mode: 'cors',
-        keepalive: true
-      }).catch(function () {});
-    } catch (e) {}
+    // Enviar a la API local de Pulso si estamos en localhost
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      try {
+        fetch(PULSO_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          mode: 'cors',
+          keepalive: true
+        }).catch(function () {});
+      } catch (e) {}
+    }
 
     // Enviar a Supabase dev.events
     try {

@@ -148,10 +148,22 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
               }
               const { data: proLeadsData } = await proQuery
               if (proLeadsData) {
-                const knownPhones = new Set(allLeadsRows.map(l => l.telefono))
+                const knownIds = new Set(allLeadsRows.map(l => `${l.origen || ''}_${l.id}`))
+                const knownPhones = new Set(
+                  allLeadsRows
+                    .filter(l => l.telefono && l.telefono !== 'Sin registrar')
+                    .map(l => l.telefono)
+                )
                 proLeadsData.forEach((pl: any) => {
-                  if (!knownPhones.has(pl.telefono)) {
-                    allLeadsRows.push(pl)
+                  const isAnon = pl.telefono === 'Sin registrar' || pl.nombre === 'Visita Anónima'
+                  if (isAnon) {
+                    if (!knownIds.has(`${pl.origen || ''}_${pl.id}`)) {
+                      allLeadsRows.push(pl)
+                    }
+                  } else {
+                    if (!knownPhones.has(pl.telefono)) {
+                      allLeadsRows.push(pl)
+                    }
                   }
                 })
               }
