@@ -183,7 +183,7 @@ function formatDate(iso: string) {
 
 function whatsappUrl(phone: string, name?: string) {
   const cleanPhone = phone.replace(/\D/g, '')
-  const formatted = cleanPhone.startsWith('09') ? `593${cleanPhone.slice(1)}` : cleanPhone
+  const formatted = cleanPhone.startsWith('0') ? `593${cleanPhone.slice(1)}` : cleanPhone
   const greeting = name ? `Hola ${name}, te saludamos de parte de tu chequeo visual...` : 'Hola, te escribimos...'
   return `https://wa.me/${formatted}?text=${encodeURIComponent(greeting)}`
 }

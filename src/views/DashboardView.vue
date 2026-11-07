@@ -2237,7 +2237,9 @@ function formatSintomas(sintomas: string[]): string {
 }
 
 function cleanPhone(phone: string): string {
-  return phone.replace(/\D/g, '')
+  const d = phone.replace(/\D/g, '')
+  if (d.startsWith('0')) return '593' + d.slice(1)
+  return d
 }
 
 onMounted(() => {
