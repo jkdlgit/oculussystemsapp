@@ -10,7 +10,7 @@
         Gracias por confiar en nosotros. Un asesor se comunicará contigo en las próximas 24 horas para confirmar tu cita.
       </p>
 
-      <a :href="whatsappLink" target="_blank" class="btn-primary w-full max-w-xs flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-4 shadow-lg shadow-[#25D366]/30">
+      <a :href="whatsappLink" target="_blank" @click="handleWhatsAppClick" class="btn-primary w-full max-w-xs flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-4 shadow-lg shadow-[#25D366]/30">
         <span class="text-xl">💬</span> Hablar con el especialista
       </a>
 
@@ -32,7 +32,7 @@
         Si no has recibido respuesta, escríbenos directamente por WhatsApp.
       </p>
       
-      <a :href="whatsappLink" target="_blank" class="btn-primary w-full max-w-xs flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-4 shadow-lg shadow-[#25D366]/30">
+      <a :href="whatsappLink" target="_blank" @click="handleWhatsAppClick" class="btn-primary w-full max-w-xs flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-4 shadow-lg shadow-[#25D366]/30">
         <span class="text-xl">💬</span> Hablar por WhatsApp
       </a>
 
@@ -81,7 +81,7 @@
         <p class="text-slate-500 mb-6 leading-relaxed text-sm">
           Antes de irte, si tienes dudas sobre tus resultados, puedes conversarlas directamente con uno de nuestros especialistas vía WhatsApp. ¡Es rápido y sin compromiso!
         </p>
-        <a :href="whatsappLink" target="_blank" @click="showExitPopup = false" class="btn-primary w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-3 shadow-lg shadow-[#25D366]/30">
+        <a :href="whatsappLink" target="_blank" @click="handleWhatsAppClick(); showExitPopup = false" class="btn-primary w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white mb-3 shadow-lg shadow-[#25D366]/30">
           <span class="text-xl">💬</span> Consultar ahora
         </a>
         <button @click="showExitPopup = false" class="text-sm text-slate-400 underline hover:text-slate-600 transition-colors mt-2">
@@ -288,6 +288,7 @@ async function handleBook() {
       // ─── Guardar timestamp en localStorage ──────────────────────────────
       localStorage.setItem(STORAGE_KEY, Date.now().toString());
       booked.value = true;
+      (window as any).pulso?.booking({ action: 'agendar_cita' });
     }
   } catch (err: any) {
     console.error('[DEBUG-BOOK] Excepción capturada en handleBook:', err);
@@ -295,5 +296,9 @@ async function handleBook() {
   } finally {
     submitting.value = false;
   }
+}
+
+function handleWhatsAppClick() {
+  (window as any).pulso?.booking({ action: 'whatsapp_click' });
 }
 </script>

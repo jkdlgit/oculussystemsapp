@@ -177,6 +177,9 @@
 
                       <div class="flex items-center gap-2">
                         <template v-if="cita.estado_cita === 'Nueva' || !cita.estado_cita">
+                          <button @click.stop="marcarLlegadaDirecta(cita)" class="flex items-center gap-1.5 rounded-xl bg-cyan-100 px-3.5 py-2 text-sm font-bold text-cyan-800 transition-colors hover:bg-cyan-200 shadow-sm" title="Marcar que el cliente llegó físicamente al local">
+                            <MapPin :size="16" /> Llegó al local
+                          </button>
                           <button @click.stop="openAtender(cita)" class="flex items-center gap-2 rounded-xl bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-200 shadow-sm">
                             <CheckCircle2 :size="18" /> Atender
                           </button>
@@ -553,6 +556,9 @@
         
         <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 flex flex-wrap justify-end gap-3">
           <button @click="closeAtender" class="rounded-lg px-5 py-2.5 text-base font-semibold text-slate-600 hover:bg-slate-200 transition-colors">Cerrar</button>
+          <button @click="marcarLlegadaDirecta(activeCita)" v-if="activeCita?.estado_cita !== 'Atendida'" class="flex items-center gap-2 rounded-lg px-5 py-2.5 text-base font-semibold text-white bg-cyan-600 hover:bg-cyan-700 shadow-sm transition-colors">
+            <MapPin :size="20"/> Confirmar Llegada al Local
+          </button>
           <button @click="openExamen" :disabled="!cedulaInput.trim() || activeCita?.estado_cita === 'Atendida'" :class="['flex items-center gap-2 rounded-lg px-5 py-2.5 text-base font-semibold text-white shadow-sm transition-colors', (cedulaInput.trim() && activeCita?.estado_cita !== 'Atendida') ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-400 cursor-not-allowed']"><ClipboardList :size="20"/> Agregar Examen</button>
           <button @click="openPedido" :disabled="!cedulaInput.trim()" :class="['flex items-center gap-2 rounded-lg px-5 py-2.5 text-base font-semibold text-white shadow-sm transition-colors', cedulaInput.trim() ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-400 cursor-not-allowed']"><ShoppingCart :size="20"/> Generar Pedido</button>
         </div>
@@ -1118,6 +1124,7 @@ import {
   X,
   XCircle,
   ClipboardList,
+  MapPin,
   Save,
   Users,
   CalendarDays,
@@ -1653,6 +1660,38 @@ function openAtender(cita: Cita) {
 function closeAtender() {
   isAtenderModalOpen.value = false
   activeCita.value = null
+}
+
+async function marcarLlegadaDirecta(cita: Cita) {
+  if (!cita) return
+  try {
+    if (hasConfig) {
+      const { error: sbErr } = await supabase
+        .from('leads')
+        .update({ estado_cita: 'Atendida', estado: 'Atendido' })
+        .eq('id', cita.id)
+      if (sbErr) {
+        alert(`Error al registrar llegada: ${sbErr.message}`)
+        return
+      }
+    }
+    // Actualización optimista
+    cita.estado_cita = 'Atendida'
+    cita.estado = 'Atendido'
+    const idx = citas.value.findIndex(c => c.id === cita.id)
+    if (idx !== -1) {
+      citas.value[idx].estado_cita = 'Atendida'
+      citas.value[idx].estado = 'Atendido'
+    }
+    if (activeCita.value && activeCita.value.id === cita.id) {
+      activeCita.value.estado_cita = 'Atendida'
+      activeCita.value.estado = 'Atendido'
+    }
+    isAtenderModalOpen.value = false
+    await fetchCitas()
+  } catch (err: any) {
+    alert(`Error: ${err?.message || err}`)
+  }
 }
 
 function openExamen() {

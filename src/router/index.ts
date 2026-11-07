@@ -16,6 +16,22 @@ const router = createRouter({
       component: QuizView,
     },
     {
+      path: '/quiz2',
+      name: 'quiz2',
+      component: () => import('@/views/Quiz2View.vue'),
+    },
+    // Rutas Multi-Tenant por Cliente: /:clientSlug/:quizSlug
+    {
+      path: '/opticajohanna/quiz1',
+      name: 'opticajohanna-quiz1',
+      component: QuizView,
+    },
+    {
+      path: '/opticajohanna/quiz2',
+      name: 'opticajohanna-quiz2',
+      component: () => import('@/views/Quiz2View.vue'),
+    },
+    {
       path: '/visioncheck1',
       name: 'visioncheck',
       component: () => import('@/views/VisionCheckView.vue'),
