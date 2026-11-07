@@ -140,3 +140,14 @@ export interface QuizRankingRow {
   ingresos: number
   tasaGlobal: number   // (Ventas / Visitas) * 100
 }
+
+export interface HeatmapCell {
+  dayIndex: number  // 0=Lunes ... 6=Domingo
+  hour: number      // 0-23
+  visitas: number
+  completados: number
+  reservas: number
+  llegaron: number
+  ventas: number
+  tasa: number      // % visitas → reservas (modo calidad)
+}

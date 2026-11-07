@@ -221,6 +221,27 @@
             <SourcesChart :data="sources" />
           </div>
         </div>
+
+        <!-- 4. MAPA DE CALOR 7x24 — Día × Hora (Hora local Ecuador UTC-5) -->
+        <div class="hud-card">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-pulso-border/50">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 bg-cyan-500 rounded-full"></span>
+              <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold">
+                Mapa de Calor por Día y Hora
+              </h3>
+            </div>
+            <div class="flex items-center gap-2 text-[10px] font-mono text-slate-400">
+              <span>🕐</span>
+              <span>HORA LOCAL ECUADOR (UTC-5)</span>
+            </div>
+          </div>
+          <HeatmapChart
+            :matrix="heatmapData"
+            :weekdays="heatmapWeekdays"
+            :low-data-warning="heatmapLowDataWarning"
+          />
+        </div>
       </main>
     </div>
   </div>
@@ -234,6 +255,7 @@ import HudTopbar from '@/pulso/components/HudTopbar.vue'
 import SidebarNav from '@/pulso/components/SidebarNav.vue'
 import TodoFunnelChart from '@/pulso/components/TodoFunnelChart.vue'
 import QuizRankingTable from '@/pulso/components/QuizRankingTable.vue'
+import HeatmapChart from '@/pulso/components/HeatmapChart.vue'
 import VisitsChart from '@/pulso/components/VisitsChart.vue'
 import SourcesChart from '@/pulso/components/SourcesChart.vue'
 import type { QuizConfig } from '@/pulso/types'
@@ -251,6 +273,9 @@ const {
   quizRanking,
   dailyData,
   sources,
+  heatmapData,
+  heatmapLowDataWarning,
+  heatmapWeekdays,
 } = usePulsoTodoData(clientSlugParam.value)
 
 const todoQuizConfig = computed<QuizConfig>(() => ({

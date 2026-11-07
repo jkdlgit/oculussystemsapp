@@ -11,6 +11,7 @@ import type {
   TodoKpiComparison,
   TodoFunnelStep,
   QuizRankingRow,
+  HeatmapCell,
   DailyVisit,
   Lead,
   Event
@@ -668,6 +669,121 @@ export function usePulsoTodoData(clientSlugParam: string) {
     }))
   })
 
+  // ---------------------------------------------------------------------------
+  // ETAPA 2: MAPA DE CALOR 7x24 (Día x Hora) — Hora local Ecuador UTC-5
+  // ---------------------------------------------------------------------------
+
+  // Días de la semana en español (0=Lunes ... 6=Domingo)
+  const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+  // Convierte una fecha ISO a hora local Ecuador (UTC-5) sin librerías externas
+  function toEcuadorHour(dateStr: string): { dayIndex: number; hour: number } | null {
+    if (!dateStr) return null
+    const utcMs = new Date(dateStr).getTime()
+    if (isNaN(utcMs)) return null
+    // Ecuador = UTC-5 → restar 5 horas
+    const ecMs = utcMs - 5 * 60 * 60 * 1000
+    const ecDate = new Date(ecMs)
+    // getUTCDay(): 0=Domingo ... 6=Sábado → convertir a 0=Lunes ... 6=Domingo
+    const rawDay = ecDate.getUTCDay() // 0=Dom,1=Lun,...,6=Sáb
+    const dayIndex = rawDay === 0 ? 6 : rawDay - 1 // 0=Lun...6=Dom
+    const hour = ecDate.getUTCHours()
+    return { dayIndex, hour }
+  }
+
+  // Mapa de calor: HeatmapCell[dayIndex 0-6][hour 0-23]
+  const heatmapData = computed<HeatmapCell[][]>(() => {
+    // Inicializar matriz 7 días × 24 horas
+    const matrix: HeatmapCell[][] = Array.from({ length: 7 }, (_, dayIndex) =>
+      Array.from({ length: 24 }, (_, hour) => ({
+        dayIndex,
+        hour,
+        visitas: 0,
+        completados: 0,
+        reservas: 0,
+        llegaron: 0,
+        ventas: 0,
+        tasa: 0,
+      }))
+    )
+
+    const { currentStart, currentEnd } = dateWindows.value
+    const filteredLeads = allClientLeads.value.filter(l =>
+      isInRange(l.created_at, currentStart, currentEnd)
+    )
+
+    // Mínimo 4 semanas (28 días) para estadísticas horarias confiables
+    const daysSelected = selectedRangeDays.value || 365
+    const lowDataWarning = daysSelected < 28
+
+    filteredLeads.forEach(l => {
+      const ec = toEcuadorHour(l.created_at || '')
+      if (!ec) return
+      const { dayIndex, hour } = ec
+      const cell = matrix[dayIndex][hour]
+      cell.visitas += 1
+
+      const resp = (l.respuestas as any) || {}
+      const isCompleted =
+        (resp.paso && resp.paso >= 4) ||
+        resp.visionCheck_score ||
+        l.estado === 'Viendo Resultados' ||
+        l.estado === 'Completado' ||
+        l.estado === 'Agendado' ||
+        l.estado === 'Atendido'
+      if (isCompleted) cell.completados += 1
+
+      const isReserva =
+        l.estado === 'Agendado' ||
+        l.estado === 'Atendido' ||
+        !!l.fecha_cita ||
+        (l.estado_cita && l.estado_cita !== 'Nueva')
+      if (isReserva) cell.reservas += 1
+
+      if (l.estado_cita === 'Atendida') cell.llegaron += 1
+    })
+
+    // Enriquecer con pedidos/ventas por hora de creación del lead vinculado
+    if (currentClient.value.has_local_crm) {
+      const leadMap = new Map<string, Lead>()
+      filteredLeads.forEach(l => { if (l.id) leadMap.set(String(l.id), l) })
+
+      const pacientesFiltered = rawPacientes.value.filter(p => p.lead_id && leadMap.has(String(p.lead_id)))
+      const pacienteIdToLead = new Map<string, Lead>()
+      pacientesFiltered.forEach(p => {
+        const lead = leadMap.get(String(p.lead_id))
+        if (lead) pacienteIdToLead.set(String(p.id), lead)
+      })
+
+      rawPedidos.value
+        .filter(p => p.estado_pago === 'Pagado total' && pacienteIdToLead.has(String(p.paciente_id)))
+        .forEach(p => {
+          const lead = pacienteIdToLead.get(String(p.paciente_id))
+          if (!lead) return
+          const ec = toEcuadorHour(lead.created_at || '')
+          if (!ec) return
+          matrix[ec.dayIndex][ec.hour].ventas += 1
+        })
+    }
+
+    // Calcular tasa (% visitas→reservas) para modo calidad
+    matrix.forEach(day => {
+      day.forEach(cell => {
+        cell.tasa = cell.visitas > 0 ? Math.round((cell.reservas / cell.visitas) * 100) : 0
+      })
+    })
+
+    return matrix
+  })
+
+  const heatmapLowDataWarning = computed(() => {
+    const days = selectedRangeDays.value || 365
+    return days < 28
+  })
+
+  const heatmapWeekdays = WEEKDAYS
+
+  // ---------------------------------------------------------------------------
   // Polling automático cada 2s
   let pollInterval: ReturnType<typeof setInterval>
 
@@ -692,6 +808,9 @@ export function usePulsoTodoData(clientSlugParam: string) {
     quizRanking,
     dailyData,
     sources,
+    heatmapData,
+    heatmapLowDataWarning,
+    heatmapWeekdays,
     loading,
     refreshData: loadData,
   }
