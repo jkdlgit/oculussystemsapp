@@ -15,20 +15,20 @@
           placeholder="Ej. Juan Pérez"
           class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
         />
+        <p v-if="errors.nombre" class="text-red-500 text-xs mt-1">{{ errors.nombre }}</p>
       </div>
       
       <div>
         <label class="block text-sm font-bold text-slate-700 mb-1">Teléfono (WhatsApp) *</label>
-        <div class="relative">
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">+593</span>
-          <input 
-            v-model="form.telefono" 
-            type="tel" 
-            required 
-            placeholder="987654321"
-            class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl pl-16 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
-          />
-        </div>
+        <input 
+          v-model="form.telefono" 
+          type="tel" 
+          required 
+          placeholder="Ej. 0991234567 o 08..."
+          maxlength="16"
+          class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
+        />
+        <p v-if="errors.telefono" class="text-red-500 text-xs mt-1">{{ errors.telefono }}</p>
       </div>
 
       <div>
@@ -36,8 +36,8 @@
         <input 
           v-model.number="form.edad" 
           type="number" 
-          min="5" 
-          max="100"
+          min="1" 
+          max="120"
           placeholder="Ej. 35"
           class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
         />
@@ -68,7 +68,9 @@ const props = defineProps<{
   score: string
 }>()
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits<{
+  submit: [data: { nombre: string; telefono: string; edad: number }]
+}>()
 
 const form = reactive({
   nombre: '',
@@ -76,29 +78,91 @@ const form = reactive({
   edad: null as number | null
 })
 
+const errors = reactive({
+  nombre: '',
+  telefono: '',
+})
+
 const isSubmitting = ref(false)
 const errorMsg = ref('')
 
+function normalizeEcuadorianPhone(raw: string): { isValid: boolean; normalized: string; error?: string } {
+  if (!raw || !raw.trim()) {
+    return { isValid: false, normalized: '', error: 'El teléfono es obligatorio.' }
+  }
+
+  const clean = raw.trim()
+  const digits = clean.replace(/\D/g, '')
+
+  let phone = ''
+
+  if (digits.startsWith('593')) {
+    const after593 = digits.slice(3)
+    if (after593.length === 9) {
+      phone = '0' + after593
+    } else if (after593.length === 10 && after593.startsWith('0')) {
+      phone = after593
+    }
+  } else if (digits.length === 9 && (digits.startsWith('8') || digits.startsWith('9'))) {
+    phone = '0' + digits
+  } else if (digits.length === 10 && (digits.startsWith('08') || digits.startsWith('09'))) {
+    phone = digits
+  } else if (digits.length === 10 && digits.startsWith('0')) {
+    phone = digits
+  }
+
+  if (phone && /^0[89]\d{8}$/.test(phone)) {
+    return { isValid: true, normalized: phone }
+  }
+
+  if (phone && /^0\d{9}$/.test(phone)) {
+    return { isValid: true, normalized: phone }
+  }
+
+  return {
+    isValid: false,
+    normalized: raw,
+    error: 'Ingresa un número celular válido de Ecuador de 10 dígitos (Ej. 09... o 08...).',
+  }
+}
+
 async function submitForm() {
-  if (!form.nombre || !form.telefono) {
-    errorMsg.value = 'Por favor completa los campos requeridos.'
+  errors.nombre = ''
+  errors.telefono = ''
+  errorMsg.value = ''
+
+  if (!form.nombre || form.nombre.trim().length < 2) {
+    errors.nombre = 'Por favor ingresa tu nombre completo.'
     return
   }
 
+  const phoneRes = normalizeEcuadorianPhone(form.telefono)
+  if (!phoneRes.isValid) {
+    errors.telefono = phoneRes.error || 'Ingresa un celular válido de Ecuador.'
+    return
+  }
+
+  form.telefono = phoneRes.normalized
   isSubmitting.value = true
-  errorMsg.value = ''
+
+  const finalData = {
+    nombre: form.nombre.trim(),
+    telefono: phoneRes.normalized,
+    edad: form.edad || 0
+  }
 
   if (hasSupabaseConfig && props.leadId) {
     try {
       const { error } = await supabase
         .from('leads')
         .update({
-          nombre: form.nombre,
-          telefono: form.telefono,
-          edad: form.edad,
+          nombre: finalData.nombre,
+          telefono: finalData.telefono,
+          edad: finalData.edad,
           estado: 'Agendado',
           estado_cita: 'Nueva',
-          respuestas: { visionCheck_score: props.score }
+          resultado: 'Agudeza visual estimada: ' + props.score,
+          respuestas: { visionCheck_score: props.score, etapa: 'agendado', paso: 4 }
         })
         .eq('id', props.leadId)
 
@@ -112,6 +176,6 @@ async function submitForm() {
   }
 
   isSubmitting.value = false
-  emit('submit')
+  emit('submit', finalData)
 }
 </script>

@@ -23,7 +23,7 @@ export const MOCK_CLIENTS: Client[] = [
       {
         id: 'quiz2',
         quiz_key: 'quiz2',
-        name: 'Quiz 2 (Diagnóstico Rápido Pulso)',
+        name: 'Quiz 2 (VisiónCheck — Agudeza Visual)',
         url: 'http://localhost:5173/opticajohanna/quiz2',
         active: true,
         created_at: '2026-11-06T00:00:00Z',

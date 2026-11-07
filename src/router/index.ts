@@ -33,8 +33,21 @@ const router = createRouter({
     },
     {
       path: '/visioncheck1',
-      name: 'visioncheck',
-      component: () => import('@/views/VisionCheckView.vue'),
+      redirect: '/opticajohanna/quiz2',
+    },
+    {
+      path: '/:clientSlug/quiz1',
+      name: 'client-quiz1',
+      component: QuizView,
+    },
+    {
+      path: '/:clientSlug/quiz2',
+      name: 'client-quiz2',
+      component: () => import('@/views/Quiz2View.vue'),
+    },
+    {
+      path: '/:clientSlug/visioncheck1',
+      redirect: to => `/${to.params.clientSlug}/quiz2`,
     },
     {
       path: '/dashboard',

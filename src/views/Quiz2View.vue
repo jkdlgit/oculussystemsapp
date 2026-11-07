@@ -1,82 +1,38 @@
 <template>
-  <div class="min-h-screen bg-brand-bg flex items-center justify-center p-4 sm:p-6 relative">
+  <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 relative">
     <!-- Pulso Badge Floating Indicator -->
     <div class="fixed top-3 right-3 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-xs font-mono shadow-lg backdrop-blur">
       <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-      <span>PULSO TRACKER // ACTIVO [opticajohanna / quiz2]</span>
+      <span>PULSO TRACKER // ACTIVO [{{ clientSlug }} / quiz2]</span>
     </div>
 
-    <div class="w-full max-w-lg">
-      <!-- Card Container -->
-      <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-10">
-
-        <!-- Progress Bar (hidden on welcome) -->
-        <ProgressBar v-if="step > 0 && step < 5" :current="step" :total="4" />
-
-        <!-- Steps -->
+    <main class="w-full max-w-lg">
+      <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-8 md:p-10 border border-slate-100 overflow-hidden">
         <Transition name="fade" mode="out-in">
-          <Step0Welcome v-if="step === 0" @next="handleStart" :key="0" />
-
-          <Step1PersonalData
-            v-else-if="step === 1"
-            :nombre="quiz.nombre"
-            :telefono="quiz.telefono"
-            :edad="quiz.edad"
-            @next="handleStep1"
-            :key="1"
-          />
-
-          <Step2Symptoms
-            v-else-if="step === 2"
-            :sintomas="quiz.sintomas"
-            @next="handleStep2"
-            :key="2"
-          />
-
-          <Step3Vision
-            v-else-if="step === 3"
-            :vision-lejos="quiz.visionLejos"
-            :vision-cerca="quiz.visionCerca"
-            @next="handleStep3"
-            :key="3"
-          />
-
-          <Step4Colors
-            v-else-if="step === 4"
-            :problemas-colores="quiz.problemasColores"
-            :detalle-colores="quiz.detalleColores"
-            @next="handleStep4"
-            :key="4"
-          />
-
-          <Step5Result
-            v-else-if="step === 5"
-            :quiz-data="quiz"
-            @restart="handleRestart"
-            :key="5"
-          />
+          <VCWelcome v-if="step === 0" @start="handleStart" :key="0" />
+          <VCPrueba v-else-if="step === 1" @finish="handleTestFinish" :key="1" />
+          <VCResultado v-else-if="step === 2" :score="acuityScore" @next="handleGoToForm" :key="2" />
+          <VCFormulario v-else-if="step === 3" :lead-id="leadId" :score="acuityScore" @submit="handleFormSubmit" :key="3" />
+          <VCFinal v-else-if="step === 4" @whatsapp="handleWhatsAppClick" :key="4" />
         </Transition>
       </div>
 
-      <!-- Footer -->
-      <p class="text-center text-xs text-slate-400 mt-6">
-        &copy; {{ new Date().getFullYear() }} VisioControl &mdash; Test Visual monitoreado con Pulso
+      <p class="text-center text-xs text-slate-400 mt-6 font-medium">
+        &copy; {{ new Date().getFullYear() }} Oculus &mdash; VisiónCheck monitoreado con Pulso
       </p>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { supabase, hasSupabaseConfig } from '@/supabase'
-import type { QuizData } from '@/types'
-import ProgressBar from '@/components/ProgressBar.vue'
-import Step0Welcome from '@/components/Step0Welcome.vue'
-import Step1PersonalData from '@/components/Step1PersonalData.vue'
-import Step2Symptoms from '@/components/Step2Symptoms.vue'
-import Step3Vision from '@/components/Step3Vision.vue'
-import Step4Colors from '@/components/Step4Colors.vue'
-import Step5Result from '@/components/Step5Result.vue'
+import VCWelcome from '@/components/visioncheck1/VCWelcome.vue'
+import VCPrueba from '@/components/visioncheck1/VCPrueba.vue'
+import VCResultado from '@/components/visioncheck1/VCResultado.vue'
+import VCFormulario from '@/components/visioncheck1/VCFormulario.vue'
+import VCFinal from '@/components/visioncheck1/VCFinal.vue'
 
 declare global {
   interface Window {
@@ -93,62 +49,30 @@ declare global {
   }
 }
 
+const route = useRoute()
 const step = ref(0)
+const leadId = ref<number | null>(null)
+const acuityScore = ref<string>('')
+const owner = ref<string>('publicidad')
 
-const quiz = reactive<QuizData>({
-  nombre: '',
-  telefono: '',
-  edad: null,
-  sintomas: [],
-  visionLejos: '',
-  visionCerca: '',
-  problemasColores: '',
-  detalleColores: '',
-  utmSource: '',
-  utmMedium: '',
-  utmCampaign: '',
-  owner: '',
+const clientSlug = computed(() => {
+  const param = route.params.clientSlug as string
+  if (param) return param
+  const pathParts = window.location.pathname.split('/').filter(Boolean)
+  if (pathParts.length > 1 && (pathParts[1] === 'quiz2' || pathParts[1] === 'visioncheck1')) {
+    return pathParts[0]
+  }
+  return 'opticajohanna'
 })
 
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
-  quiz.utmSource = params.get('utm_source') || ''
-  quiz.utmMedium = params.get('utm_medium') || ''
-  quiz.utmCampaign = params.get('utm_campaign') || ''
   const ownerParam = params.get('owner')
-  quiz.owner = ownerParam === 'especialista' ? 'especialista' : 'publicidad'
-
-  // 🧪 Registrar visita de inmediato en Supabase (solo una vez por sesión de pestaña)
-  const sessionVisitKey = '_oculus_visit_quiz2'
-  const cachedLeadId = sessionStorage.getItem(sessionVisitKey)
-  if (cachedLeadId) {
-    quiz.leadId = Number(cachedLeadId)
-  } else if (hasSupabaseConfig && !quiz.leadId) {
-    try {
-      const payload = {
-        nombre: 'Visita Anónima',
-        telefono: 'Sin registrar',
-        edad: 0,
-        respuestas: { etapa: 'visita', paso: 0 },
-        estado: 'Visita',
-        origen: 'quiz2',
-        utm_source: quiz.utmSource || null,
-        utm_medium: quiz.utmMedium || null,
-        utm_campaign: quiz.utmCampaign || null,
-        owner: quiz.owner || 'publicidad',
-      }
-      const { data: leadData, error: leadErr } = await supabase.from('leads').insert(payload).select('id').single()
-      if (!leadErr && leadData) {
-        quiz.leadId = leadData.id
-        sessionStorage.setItem(sessionVisitKey, String(leadData.id))
-        console.log('📡 [PULSO] Visita Quiz 2 registrada en Supabase. Lead ID:', leadData.id)
-      }
-    } catch (e) {
-      console.warn('📡 [PULSO] Error registrando visita Quiz 2 en Supabase:', e)
-    }
+  if (ownerParam === 'especialista') {
+    owner.value = 'especialista'
   }
 
-  // Inyectar el tracker de Pulso para /opticajohanna/quiz2
+  // Iniciar Tracker de Pulso para [clientSlug / quiz2]
   const scriptId = 'pulso-tracker-script'
   let script = document.getElementById(scriptId) as HTMLScriptElement | null
   if (!script) {
@@ -156,147 +80,122 @@ onMounted(async () => {
     script.id = scriptId
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     script.src = isLocal ? 'http://localhost:5174/tracker.js?v=0.8' : '/tracker.js?v=0.8'
-    script.setAttribute('data-client', 'opticajohanna')
+    script.setAttribute('data-client', clientSlug.value)
     script.setAttribute('data-quiz', 'quiz2')
-    script.setAttribute('data-site', 'opticajohanna/quiz2')
-    script.defer = true
     document.head.appendChild(script)
   } else {
     if (window.pulso?.setClientAndQuiz) {
-      window.pulso.setClientAndQuiz('opticajohanna', 'quiz2')
+      window.pulso.setClientAndQuiz(clientSlug.value, 'quiz2')
     } else if (window.pulso?.setSite) {
-      window.pulso.setSite('opticajohanna/quiz2')
-    } else {
-      window.pulso?.visit()
+      window.pulso.setSite(`${clientSlug.value}/quiz2`)
+    }
+    window.pulso?.visit()
+  }
+
+  // Registrar visita inmediata en Supabase (solo una vez por sesión de pestaña)
+  const sessionVisitKey = `_oculus_visit_${clientSlug.value}_quiz2`
+  const cachedLeadId = sessionStorage.getItem(sessionVisitKey)
+  if (cachedLeadId) {
+    leadId.value = Number(cachedLeadId)
+  } else if (hasSupabaseConfig && !leadId.value) {
+    try {
+      const payload = {
+        nombre: 'Visita Anónima',
+        telefono: 'Sin registrar',
+        edad: 0,
+        respuestas: { etapa: 'visita', paso: 0, test: 'visioncheck1' },
+        estado: 'Visita',
+        origen: 'quiz2',
+        utm_source: params.get('utm_source') || null,
+        utm_medium: params.get('utm_medium') || null,
+        utm_campaign: params.get('utm_campaign') || null,
+        owner: owner.value,
+      }
+      const { data, error } = await supabase.from('leads').insert(payload).select('id').single()
+      if (!error && data) {
+        leadId.value = data.id
+        sessionStorage.setItem(sessionVisitKey, String(data.id))
+        console.log('📡 [PULSO] Visita registrada en Supabase (Quiz 2 / VisiónCheck). Lead ID:', data.id)
+      }
+    } catch (err) {
+      console.warn('📡 [PULSO] Error registrando visita en Supabase:', err)
     }
   }
 })
 
-function handleStart() {
+async function handleStart() {
   step.value = 1
+  window.pulso?.step(1, { action: 'iniciar_prueba_visioncheck' })
+
+  if (hasSupabaseConfig && leadId.value) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Paso 1',
+        respuestas: { etapa: 'prueba_iniciada', paso: 1, test: 'visioncheck1' }
+      }).eq('id', leadId.value)
+    } catch (e) {}
+  }
 }
 
-async function handleStep1(data: { nombre: string; telefono: string; edad: number }) {
-  quiz.nombre = data.nombre
-  quiz.telefono = data.telefono
-  quiz.edad = data.edad
+async function handleTestFinish(score: string) {
+  acuityScore.value = score
   step.value = 2
 
-  // 1️⃣ Pulso: Marcar Paso 1 completado
-  window.pulso?.step(1, { nombre: data.nombre, edad: data.edad })
+  // Telemetría Pulso: Paso 2 y completado de la prueba
+  window.pulso?.step(2, { score })
+  window.pulso?.completed({ score, test: 'visioncheck1' })
 
-  if (hasSupabaseConfig) {
-    const payload = {
-      nombre: quiz.nombre,
-      telefono: quiz.telefono,
-      edad: quiz.edad,
-      respuestas: { etapa: 'paso_1', paso: 1 },
-      utm_source: quiz.utmSource || null,
-      utm_medium: quiz.utmMedium || null,
-      utm_campaign: quiz.utmCampaign || null,
-      estado: 'Paso 1',
-      origen: 'quiz2',
-      owner: quiz.owner || 'publicidad',
-    }
-    try {
-      if (quiz.leadId) {
-        await supabase.from('leads').update(payload).eq('id', quiz.leadId)
-      } else {
-        const { data: leadData, error } = await supabase.from('leads').insert(payload).select('id').single()
-        if (!error && leadData) {
-          quiz.leadId = leadData.id
-          sessionStorage.setItem('_oculus_visit_quiz2', String(leadData.id))
-        }
-      }
-    } catch (err) {
-      console.error('[PULSO-QUIZ2] Error guardando lead en Supabase', err)
-    }
-  }
-}
-
-async function handleStep2(sintomas: string[]) {
-  quiz.sintomas = sintomas
-  step.value = 3
-
-  // 2️⃣ Pulso: Marcar Paso 2 completado
-  window.pulso?.step(2, { sintomasCount: sintomas.length })
-
-  if (hasSupabaseConfig && quiz.leadId) {
-    try {
-      await supabase.from('leads').update({
-        estado: 'Paso 2',
-        respuestas: { sintomas, etapa: 'paso_2', paso: 2 }
-      }).eq('id', quiz.leadId)
-    } catch (e) {}
-  }
-}
-
-async function handleStep3(data: { lejos: string; cerca: string }) {
-  quiz.visionLejos = data.lejos
-  quiz.visionCerca = data.cerca
-  step.value = 4
-
-  // 3️⃣ Pulso: Marcar Paso 3 completado
-  window.pulso?.step(3, { lejos: data.lejos, cerca: data.cerca })
-
-  if (hasSupabaseConfig && quiz.leadId) {
-    try {
-      await supabase.from('leads').update({
-        estado: 'Paso 3',
-        respuestas: { sintomas: quiz.sintomas, vision_lejos: data.lejos, vision_cerca: data.cerca, etapa: 'paso_3', paso: 3 }
-      }).eq('id', quiz.leadId)
-    } catch (e) {}
-  }
-}
-
-async function handleStep4(data: { problema: string; detalle: string }) {
-  quiz.problemasColores = data.problema
-  quiz.detalleColores = data.detalle
-  step.value = 5
-
-  // ✅ Pulso: Marcar COMPLETADOS (Terminó el quiz antes de agendar o WhatsApp)
-  window.pulso?.completed({
-    nombre: quiz.nombre,
-    telefono: quiz.telefono,
-    problemasColores: data.problema
-  })
-
-  window.pulso?.lead({
-    nombre: quiz.nombre,
-    telefono: quiz.telefono,
-    edad: quiz.edad,
-    origen: 'quiz2'
-  })
-
-  if (hasSupabaseConfig && quiz.leadId) {
+  if (hasSupabaseConfig && leadId.value) {
     try {
       await supabase.from('leads').update({
         estado: 'Viendo Resultados',
-        resultado: 'Has completado el diagnóstico visual.',
-        respuestas: {
-          sintomas: quiz.sintomas,
-          vision_lejos: quiz.visionLejos,
-          vision_cerca: quiz.visionCerca,
-          problemas_colores: data.problema,
-          detalle_colores: data.detalle,
-          etapa: 'completado',
-          paso: 4
-        }
-      }).eq('id', quiz.leadId)
-    } catch (e) {}
+        resultado: 'Agudeza visual estimada: ' + score,
+        respuestas: { visionCheck_score: score, etapa: 'completado', paso: 2, test: 'visioncheck1' }
+      }).eq('id', leadId.value)
+      console.log('📡 [PULSO] Prueba VisiónCheck completada, score:', score)
+    } catch (err) {
+      console.error('[VC] Error actualizando resultado:', err)
+    }
   }
 }
 
-function handleRestart() {
-  quiz.leadId = undefined
-  quiz.nombre = ''
-  quiz.telefono = ''
-  quiz.edad = null
-  quiz.sintomas = []
-  quiz.visionLejos = ''
-  quiz.visionCerca = ''
-  quiz.problemasColores = ''
-  quiz.detalleColores = ''
-  step.value = 0
+function handleGoToForm() {
+  step.value = 3
+  window.pulso?.step(3, { action: 'abrir_formulario_reserva' })
+}
+
+function handleFormSubmit(formData: { nombre: string; telefono: string; edad: number }) {
+  step.value = 4
+
+  // Telemetría Pulso: Reserva completada
+  window.pulso?.booking({
+    action: 'reserva_formulario_visioncheck',
+    nombre: formData.nombre,
+    score: acuityScore.value
+  })
+}
+
+function handleWhatsAppClick() {
+  window.pulso?.booking({
+    action: 'whatsapp_confirmacion_visioncheck',
+    score: acuityScore.value
+  })
 }
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

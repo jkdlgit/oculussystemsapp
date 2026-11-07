@@ -124,8 +124,8 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
           if (clientSlug.value === 'opticajohanna' || clientSlug.value === 'oculus') {
             if (quizSlug.value === 'quiz1') {
               queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.is.null')
-            } else if (quizSlug.value === 'quiz2') {
-              queryLeads = queryLeads.or('origen.eq.quiz2,origen.eq.opticajohanna_quiz2')
+            } else if (quizSlug.value === 'quiz2' || quizSlug.value === 'visioncheck1') {
+              queryLeads = queryLeads.or('origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1')
             } else {
               queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.quiz2,origen.is.null')
             }
@@ -143,8 +143,8 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
               let proQuery = supabase.schema('pro').from('leads').select('*').order('created_at', { ascending: false })
               if (quizSlug.value === 'quiz1') {
                 proQuery = proQuery.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.is.null')
-              } else if (quizSlug.value === 'quiz2') {
-                proQuery = proQuery.or('origen.eq.quiz2,origen.eq.opticajohanna_quiz2')
+              } else if (quizSlug.value === 'quiz2' || quizSlug.value === 'visioncheck1') {
+                proQuery = proQuery.or('origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1')
               }
               const { data: proLeadsData } = await proQuery
               if (proLeadsData) {
@@ -272,14 +272,14 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
     const paso2Events = countUniqueSessions(events.value, 'paso_2')
     const paso2Leads = leads.value.filter(l => {
       const resp = (l.respuestas as any) || {}
-      return (resp.paso && resp.paso >= 2) || (resp.sintomas && resp.sintomas.length > 0) || l.estado === 'Paso 2' || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
+      return (resp.paso && resp.paso >= 2) || (resp.sintomas && resp.sintomas.length > 0) || resp.visionCheck_score || l.estado === 'Paso 2' || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
     }).length
     const paso2 = Math.max(paso2Events, paso2Leads)
 
     const paso3Events = countUniqueSessions(events.value, 'paso_3')
     const paso3Leads = leads.value.filter(l => {
       const resp = (l.respuestas as any) || {}
-      return (resp.paso && resp.paso >= 3) || (resp.vision_lejos || resp.vision_cerca) || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
+      return (resp.paso && resp.paso >= 3) || (resp.vision_lejos || resp.vision_cerca) || (resp.visionCheck_score && l.estado === 'Agendado') || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
     }).length
     const paso3 = Math.max(paso3Events, paso3Leads)
 
@@ -287,7 +287,7 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
     const completadosEvents = countUniqueSessions(events.value, 'completado')
     const completadosLeads = leads.value.filter(l => {
       const resp = (l.respuestas as any) || {}
-      return (resp.paso && resp.paso >= 4) || resp.problemas_colores || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
+      return (resp.paso && resp.paso >= 4) || resp.problemas_colores || resp.visionCheck_score || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
     }).length
     const completados = Math.max(completadosEvents, completadosLeads)
 
