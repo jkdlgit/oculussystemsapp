@@ -137,8 +137,8 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
           const { data: leadsData } = await queryLeads
           let allLeadsRows: any[] = leadsData ? [...leadsData] : []
 
-          // También consultar schema 'pro' en Óptica Johanna para unificar leads de producción
-          if (clientSlug.value === 'opticajohanna' || clientSlug.value === 'oculus') {
+          // También consultar schema 'pro' en Óptica Johanna solo si el schema por defecto no es ya 'pro'
+          if ((clientSlug.value === 'opticajohanna' || clientSlug.value === 'oculus') && import.meta.env.VITE_SUPABASE_SCHEMA !== 'pro') {
             try {
               let proQuery = supabase.schema('pro').from('leads').select('*').order('created_at', { ascending: false })
               if (quizSlug.value === 'quiz1') {
@@ -195,16 +195,42 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
         // 4. Si el cliente tiene sistema local (/dashboard Oculus), consultar Pacientes y Pedidos
         if (hasLocalCrm.value) {
           try {
-            const [pacRes, pedRes, pacProRes, pedProRes] = await Promise.all([
+            const isDefaultPro = import.meta.env.VITE_SUPABASE_SCHEMA === 'pro'
+            const [pacRes, pedRes] = await Promise.all([
               supabase.from('pacientes').select('id, lead_id'),
               supabase.from('pedidos').select('id, paciente_id, total, estado_pago, estado_pedido, created_at'),
-              supabase.schema('pro').from('pacientes').select('id, lead_id'),
-              supabase.schema('pro').from('pedidos').select('id, paciente_id, total, estado_pago, estado_pedido, created_at'),
             ])
-            const allPac = [...(pacRes.data || []), ...(pacProRes.data || [])]
-            const allPed = [...(pedRes.data || []), ...(pedProRes.data || [])]
-            pacientesList = allPac
-            pedidosList = allPed
+
+            let pacRows = pacRes.data ? [...pacRes.data] : []
+            let pedRows = pedRes.data ? [...pedRes.data] : []
+
+            if (!isDefaultPro) {
+              try {
+                const [pacProRes, pedProRes] = await Promise.all([
+                  supabase.schema('pro').from('pacientes').select('id, lead_id'),
+                  supabase.schema('pro').from('pedidos').select('id, paciente_id, total, estado_pago, estado_pedido, created_at')
+                ])
+                if (pacProRes.data) pacRows.push(...pacProRes.data)
+                if (pedProRes.data) pedRows.push(...pedProRes.data)
+              } catch (e) {}
+            }
+
+            // Deduplicar estrictamente por id para evitar contar registros de dev y pro dos veces
+            const pacMap = new Map<string, any>()
+            pacRows.forEach((p: any) => {
+              if (p?.id && !pacMap.has(String(p.id))) {
+                pacMap.set(String(p.id), p)
+              }
+            })
+            pacientesList = Array.from(pacMap.values())
+
+            const pedMap = new Map<string, any>()
+            pedRows.forEach((p: any) => {
+              if (p?.id && !pedMap.has(String(p.id))) {
+                pedMap.set(String(p.id), p)
+              }
+            })
+            pedidosList = Array.from(pedMap.values())
           } catch (e) {
             console.warn('[PULSO] Error consultando pacientes/pedidos en Supabase:', e)
           }
@@ -296,11 +322,20 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
       const matchingPedidos = pedidosList.filter((p: any) => matchingPacienteIds.has(p.paciente_id))
 
       // 4. Ventas: pedidos con estado_pago === 'Pagado total'
-      const pagosCompletados = matchingPedidos.filter((p: any) => p.estado_pago === 'Pagado total')
-      ventasCount = pagosCompletados.length
+      // Deduplicación estricta por id de pedido para garantizar que cada venta sume exactamente 1 vez
+      const uniquePagosMap = new Map<string, any>()
+      matchingPedidos
+        .filter((p: any) => p.estado_pago === 'Pagado total')
+        .forEach((p: any) => {
+          if (!uniquePagosMap.has(String(p.id))) {
+            uniquePagosMap.set(String(p.id), p)
+          }
+        })
+      const uniquePagos = Array.from(uniquePagosMap.values())
+      ventasCount = uniquePagos.length
 
       // 5. Ingresos: suma de montos recaudados
-      ingresosTotal = pagosCompletados.reduce((acc: number, p: any) => acc + (Number(p.total) || 0), 0)
+      ingresosTotal = uniquePagos.reduce((acc: number, p: any) => acc + (Number(p.total) || 0), 0)
     }
 
     // Asignar al KPI
