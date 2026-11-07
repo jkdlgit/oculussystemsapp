@@ -267,7 +267,13 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
 
     // D) RESERVAS: Presionaron "Agendar mi cita" O el botón de WhatsApp (estrictamente 1 por persona/sesión)
     const reservasEvents = countUniqueSessions(events.value, 'reserva')
-    const reservasLeads = leads.value.filter(l => l.estado === 'Agendado' || l.estado === 'Atendido' || l.estado_cita || l.fecha_cita).length
+    // Solo contar como reserva si el lead tiene estado 'Agendado' o 'Atendido',
+    // o si tiene fecha_cita asignada explícitamente, o estado_cita distinto de 'Nueva' y distinto de null
+    const reservasLeads = leads.value.filter(l =>
+      l.estado === 'Agendado' || l.estado === 'Atendido' ||
+      !!l.fecha_cita ||
+      (l.estado_cita && l.estado_cita !== 'Nueva')
+    ).length
     const reservas = Math.max(reservasEvents, reservasLeads)
 
     // E) ETAPAS VINCULADAS AL SISTEMA LOCAL (/dashboard de Oculus)

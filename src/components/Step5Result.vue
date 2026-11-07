@@ -300,5 +300,15 @@ async function handleBook() {
 
 function handleWhatsAppClick() {
   (window as any).pulso?.booking({ action: 'whatsapp_click' });
+  // Si el usuario hace clic en WhatsApp sin haber presionado "Agendar", marcarlo también como Agendado
+  if (!booked.value && currentLeadId.value && hasSupabaseConfig) {
+    supabase.from('leads')
+      .update({ estado: 'Agendado', estado_cita: 'Nueva' })
+      .eq('id', currentLeadId.value)
+      .then(() => {
+        booked.value = true;
+        localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      });
+  }
 }
 </script>
