@@ -2011,7 +2011,8 @@ async function guardarPedido() {
 }
 
 const sortedCitas = computed(() => {
-  let sorted = [...citas.value]
+  // Filtrar visitas anónimas para que el médico solo vea contactos reales
+  let sorted = citas.value.filter(c => c.nombre !== 'Visita Anónima' && c.estado !== 'Visita' && c.telefono !== 'Sin registrar')
 
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()

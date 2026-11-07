@@ -78,17 +78,19 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
     try {
       loading.value = true
 
-      // 1. Consultar eventos del motor local de telemetría (/api/events)
-      try {
-        const res = await fetch(`http://localhost:5174/api/events?client=${clientSlug.value}&quiz=${quizSlug.value}`)
-        if (res.ok) {
-          const apiEvents = await res.json()
-          if (Array.isArray(apiEvents)) {
-            events.value = apiEvents
+      // 1. Consultar eventos del motor local de telemetría (/api/events) solo en localhost
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        try {
+          const res = await fetch(`http://localhost:5174/api/events?client=${clientSlug.value}&quiz=${quizSlug.value}`)
+          if (res.ok) {
+            const apiEvents = await res.json()
+            if (Array.isArray(apiEvents)) {
+              events.value = apiEvents
+            }
           }
+        } catch (e) {
+          // Fallback silencioso en local
         }
-      } catch (e) {
-        // Fallback si no responde la API interna
       }
 
       // 2. Consultar Supabase dev.events si existe
@@ -170,6 +172,8 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
               resultado: d.resultado,
               estado: d.estado || 'Nuevo',
               estado_cita: d.estado_cita,
+              fecha_cita: d.fecha_cita,
+              hora_cita: d.hora_cita,
               utm_source: d.utm_source || 'directo',
               created_at: d.created_at,
             }))
@@ -217,21 +221,45 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
     }
 
     // A) VISITAS: Personas que cargaron la URL (solo con ingresar a la página)
-    const visitas = countUniqueSessions(events.value, 'visita')
+    const visitasEvents = countUniqueSessions(events.value, 'visita')
+    // Contar también visitas desde la base de datos Supabase leads (todas las filas registradas para este quiz)
+    const visitasLeads = leads.value.length
+    const visitas = Math.max(visitasEvents, visitasLeads)
 
     // B) PASOS ESTANDARIZADOS (1, 2, 3)
-    const paso1 = countUniqueSessions(events.value, 'paso_1')
-    const paso2 = countUniqueSessions(events.value, 'paso_2')
-    const paso3 = countUniqueSessions(events.value, 'paso_3')
+    const paso1Events = countUniqueSessions(events.value, 'paso_1')
+    const paso1Leads = leads.value.filter(l => l.telefono !== 'Sin registrar' && l.estado !== 'Visita').length
+    const paso1 = Math.max(paso1Events, paso1Leads)
+
+    const paso2Events = countUniqueSessions(events.value, 'paso_2')
+    const paso2Leads = leads.value.filter(l => {
+      const resp = (l.respuestas as any) || {}
+      return (resp.paso && resp.paso >= 2) || (resp.sintomas && resp.sintomas.length > 0) || l.estado === 'Paso 2' || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
+    }).length
+    const paso2 = Math.max(paso2Events, paso2Leads)
+
+    const paso3Events = countUniqueSessions(events.value, 'paso_3')
+    const paso3Leads = leads.value.filter(l => {
+      const resp = (l.respuestas as any) || {}
+      return (resp.paso && resp.paso >= 3) || (resp.vision_lejos || resp.vision_cerca) || l.estado === 'Paso 3' || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
+    }).length
+    const paso3 = Math.max(paso3Events, paso3Leads)
 
     // C) COMPLETADOS: Terminaron el quiz (llegaron a ver su diagnóstico/resultado)
-    const completados = countUniqueSessions(events.value, 'completado')
+    const completadosEvents = countUniqueSessions(events.value, 'completado')
+    const completadosLeads = leads.value.filter(l => {
+      const resp = (l.respuestas as any) || {}
+      return (resp.paso && resp.paso >= 4) || resp.problemas_colores || l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido'
+    }).length
+    const completados = Math.max(completadosEvents, completadosLeads)
 
     // D) RESERVAS: Presionaron "Agendar mi cita" O el botón de WhatsApp (estrictamente 1 por persona/sesión)
-    const reservas = countUniqueSessions(events.value, 'reserva')
+    const reservasEvents = countUniqueSessions(events.value, 'reserva')
+    const reservasLeads = leads.value.filter(l => l.estado === 'Agendado' || l.estado === 'Atendido' || l.estado_cita || l.fecha_cita).length
+    const reservas = Math.max(reservasEvents, reservasLeads)
 
     // E) ETAPAS VINCULADAS AL SISTEMA LOCAL (/dashboard de Oculus)
-    // Sincronizadas directamente con la base de datos compartida PulsoDB (Supabase dev)
+    // Sincronizadas directamente con la base de datos compartida PulsoDB (Supabase dev y pro)
     let llegaron = 0
     let ventasCount = 0
     let ingresosTotal = 0
@@ -268,7 +296,7 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
       llegaron,
       ventasCount,
       ingresosTotal,
-      activeNow: visitas > 0 ? 1 : 0,
+      activeNow: Math.max(1, visitas > 0 ? 1 : 0),
     }
 
     // F) Embudo (Funnel)
@@ -295,12 +323,19 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
       },
     ]
 
-    // F) Fuentes UTM
+    // G) Fuentes UTM
     const sourceMap: Record<string, number> = {}
-    events.value.forEach(e => {
-      const s = (e.utm_source || 'directo').toLowerCase()
-      sourceMap[s] = (sourceMap[s] || 0) + 1
-    })
+    if (events.value.length > 0) {
+      events.value.forEach(e => {
+        const s = (e.utm_source || 'directo').toLowerCase()
+        sourceMap[s] = (sourceMap[s] || 0) + 1
+      })
+    } else {
+      leads.value.forEach(l => {
+        const s = (l.utm_source || 'directo').toLowerCase()
+        sourceMap[s] = (sourceMap[s] || 0) + 1
+      })
+    }
 
     const totalSources = Object.values(sourceMap).reduce((a, b) => a + b, 0)
     const palette = ['#38bdf8', '#10b981', '#f59e0b', '#6366f1', '#ec4899']
@@ -311,16 +346,31 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
       color: palette[pIdx++ % palette.length]
     }))
 
-    // G) Evolución Diaria (contabilizando sesiones únicas)
+    // H) Evolución Diaria (contabilizando sesiones únicas)
     const days: Record<string, { visitas: Set<string>; completados: Set<string>; reservas: Set<string> }> = {}
-    events.value.forEach(e => {
-      const d = new Date(e.created_at).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
-      if (!days[d]) days[d] = { visitas: new Set(), completados: new Set(), reservas: new Set() }
-      const sid = e.session_id || String(e.id)
-      if (e.event_type === 'visita') days[d].visitas.add(sid)
-      if (e.event_type === 'completado') days[d].completados.add(sid)
-      if (e.event_type === 'reserva') days[d].reservas.add(sid)
-    })
+    if (events.value.length > 0) {
+      events.value.forEach(e => {
+        const d = new Date(e.created_at).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+        if (!days[d]) days[d] = { visitas: new Set(), completados: new Set(), reservas: new Set() }
+        const sid = e.session_id || String(e.id)
+        if (e.event_type === 'visita') days[d].visitas.add(sid)
+        if (e.event_type === 'completado') days[d].completados.add(sid)
+        if (e.event_type === 'reserva') days[d].reservas.add(sid)
+      })
+    } else {
+      leads.value.forEach(l => {
+        const d = new Date(l.created_at).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+        if (!days[d]) days[d] = { visitas: new Set(), completados: new Set(), reservas: new Set() }
+        const sid = String(l.id)
+        days[d].visitas.add(sid)
+        if (l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido') {
+          days[d].completados.add(sid)
+        }
+        if (l.estado === 'Agendado' || l.estado === 'Atendido' || l.estado_cita) {
+          days[d].reservas.add(sid)
+        }
+      })
+    }
     dailyData.value = Object.entries(days).map(([date, sets]) => ({
       date,
       visitas: sets.visitas.size,

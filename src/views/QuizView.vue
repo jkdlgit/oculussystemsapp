@@ -110,13 +110,43 @@ const quiz = reactive<QuizData>({
   owner: '',
 })
 
-onMounted(() => {
+onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
   quiz.utmSource = params.get('utm_source') || ''
   quiz.utmMedium = params.get('utm_medium') || ''
   quiz.utmCampaign = params.get('utm_campaign') || ''
   const ownerParam = params.get('owner')
   quiz.owner = ownerParam === 'especialista' ? 'especialista' : 'publicidad'
+
+  // 👁️ Registrar visita de inmediato en Supabase (solo una vez por sesión de pestaña)
+  const sessionVisitKey = '_oculus_visit_quiz1'
+  const cachedLeadId = sessionStorage.getItem(sessionVisitKey)
+  if (cachedLeadId) {
+    quiz.leadId = Number(cachedLeadId)
+  } else if (hasSupabaseConfig && !quiz.leadId) {
+    try {
+      const payload = {
+        nombre: 'Visita Anónima',
+        telefono: 'Sin registrar',
+        edad: 0,
+        respuestas: { etapa: 'visita', paso: 0 },
+        estado: 'Visita',
+        origen: 'quiz1',
+        utm_source: quiz.utmSource || null,
+        utm_medium: quiz.utmMedium || null,
+        utm_campaign: quiz.utmCampaign || null,
+        owner: quiz.owner || 'publicidad',
+      }
+      const { data: leadData, error: leadErr } = await supabase.from('leads').insert(payload).select('id').single()
+      if (!leadErr && leadData) {
+        quiz.leadId = leadData.id
+        sessionStorage.setItem(sessionVisitKey, String(leadData.id))
+        console.log('📡 [PULSO] Visita registrada en Supabase. Lead ID:', leadData.id)
+      }
+    } catch (e) {
+      console.warn('📡 [PULSO] Error registrando visita en Supabase:', e)
+    }
+  }
 
   // Inyectar o inicializar tracker de Pulso para /opticajohanna/quiz1
   const scriptId = 'pulso-tracker-script'
@@ -155,48 +185,71 @@ async function handleStep1(data: { nombre: string; telefono: string; edad: numbe
   // 1️⃣ Pulso: Marcar Paso 1 completado
   window.pulso?.step(1, { nombre: data.nombre, edad: data.edad })
 
-  if (hasSupabaseConfig && !quiz.leadId) {
+  if (hasSupabaseConfig) {
     const payload = {
       nombre: quiz.nombre,
       telefono: quiz.telefono,
       edad: quiz.edad,
-      respuestas: {},
+      respuestas: { etapa: 'paso_1', paso: 1 },
       utm_source: quiz.utmSource || null,
       utm_medium: quiz.utmMedium || null,
       utm_campaign: quiz.utmCampaign || null,
-      estado: 'Nuevo',
+      estado: 'Paso 1',
       origen: 'quiz1',
       owner: quiz.owner || 'publicidad',
-    };
+    }
     try {
-      const { data: leadData, error } = await supabase.from('leads').insert(payload).select('id').single();
-      if (!error && leadData) {
-        quiz.leadId = leadData.id;
+      if (quiz.leadId) {
+        await supabase.from('leads').update(payload).eq('id', quiz.leadId)
+      } else {
+        const { data: leadData, error } = await supabase.from('leads').insert(payload).select('id').single()
+        if (!error && leadData) {
+          quiz.leadId = leadData.id
+          sessionStorage.setItem('_oculus_visit_quiz1', String(leadData.id))
+        }
       }
     } catch (err) {
-      console.error('[DEBUG-QUIZ] Error al guardar inicio del quiz', err);
+      console.error('[DEBUG-QUIZ] Error al guardar inicio del quiz', err)
     }
   }
 }
 
-function handleStep2(sintomas: string[]) {
+async function handleStep2(sintomas: string[]) {
   quiz.sintomas = sintomas
   step.value = 3
 
   // 2️⃣ Pulso: Marcar Paso 2 completado
   window.pulso?.step(2, { sintomasCount: sintomas.length })
+
+  if (hasSupabaseConfig && quiz.leadId) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Paso 2',
+        respuestas: { sintomas, etapa: 'paso_2', paso: 2 }
+      }).eq('id', quiz.leadId)
+    } catch (e) {}
+  }
 }
 
-function handleStep3(data: { lejos: string; cerca: string }) {
+async function handleStep3(data: { lejos: string; cerca: string }) {
   quiz.visionLejos = data.lejos
   quiz.visionCerca = data.cerca
   step.value = 4
 
   // 3️⃣ Pulso: Marcar Paso 3 completado
   window.pulso?.step(3, { lejos: data.lejos, cerca: data.cerca })
+
+  if (hasSupabaseConfig && quiz.leadId) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Paso 3',
+        respuestas: { sintomas: quiz.sintomas, vision_lejos: data.lejos, vision_cerca: data.cerca, etapa: 'paso_3', paso: 3 }
+      }).eq('id', quiz.leadId)
+    } catch (e) {}
+  }
 }
 
-function handleStep4(data: { problema: string; detalle: string }) {
+async function handleStep4(data: { problema: string; detalle: string }) {
   quiz.problemasColores = data.problema
   quiz.detalleColores = data.detalle
   step.value = 5
@@ -214,6 +267,24 @@ function handleStep4(data: { problema: string; detalle: string }) {
     edad: quiz.edad,
     origen: 'quiz1'
   })
+
+  if (hasSupabaseConfig && quiz.leadId) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Viendo Resultados',
+        resultado: 'Has completado el diagnóstico visual.',
+        respuestas: {
+          sintomas: quiz.sintomas,
+          vision_lejos: quiz.visionLejos,
+          vision_cerca: quiz.visionCerca,
+          problemas_colores: data.problema,
+          detalle_colores: data.detalle,
+          etapa: 'completado',
+          paso: 4
+        }
+      }).eq('id', quiz.leadId)
+    } catch (e) {}
+  }
 }
 
 function handleRestart() {

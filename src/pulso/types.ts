@@ -66,6 +66,8 @@ export interface Lead {
   resultado?: string
   estado: string
   estado_cita?: string
+  fecha_cita?: string
+  hora_cita?: string
   utm_source?: string
   created_at: string
 }
