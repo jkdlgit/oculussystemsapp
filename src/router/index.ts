@@ -66,6 +66,11 @@ const router = createRouter({
       component: () => import('@/pulso/views/SiteSelectorView.vue'),
     },
     {
+      path: '/pulso/:clientSlug/todo',
+      name: 'pulso-client-todo',
+      component: () => import('@/pulso/views/TodoView.vue'),
+    },
+    {
       path: '/pulso/:clientSlug/:quizSlug',
       name: 'pulso-client-dashboard',
       component: () => import('@/pulso/views/DashboardView.vue'),
@@ -82,7 +87,7 @@ const router = createRouter({
     },
     {
       path: '/pulso/:clientSlug',
-      redirect: to => `/pulso/${to.params.clientSlug}/quiz1`,
+      redirect: to => `/pulso/${to.params.clientSlug}/todo`,
     },
   ],
 })

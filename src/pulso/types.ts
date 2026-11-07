@@ -99,3 +99,44 @@ export interface DailyVisit {
   completados: number
   reservas: number
 }
+
+// Tipos para la pestaña TODO Consolidada
+export interface KpiComparisonItem {
+  value: number
+  prevValue: number
+  diffPct: number | null
+  diffLabel: string
+  isPositive: boolean
+  isNegative: boolean
+  isNew: boolean
+  color: string
+}
+
+export type TodoKpiComparison = Record<keyof KpiData, KpiComparisonItem>
+
+export interface TodoFunnelStep {
+  key: string
+  label: string
+  count: number
+  pctStep: number      // % respecto al paso anterior
+  pctVisits: number    // % respecto a visitas totales
+  color: string        // Hex/RGB en degradado continuo
+  symbol: string       // ▲, ▼, ●, —
+  statusLabel: string
+  isInsuficientData: boolean
+  minPersons: number
+  previousCount: number
+}
+
+export interface QuizRankingRow {
+  quizKey: string
+  quizName: string
+  emoji: string
+  visitas: number
+  completados: number
+  reservas: number
+  llegaron: number
+  ventas: number
+  ingresos: number
+  tasaGlobal: number   // (Ventas / Visitas) * 100
+}

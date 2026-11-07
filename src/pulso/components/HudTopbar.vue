@@ -36,6 +36,18 @@
 
       <!-- 📋 Píldoras de Quizzes del Cliente Activo -->
       <div class="flex items-center gap-1 p-1 rounded-lg bg-pulso-void border border-pulso-border/90 text-xs font-mono overflow-x-auto max-w-[280px] sm:max-w-none">
+        <!-- Pestaña TODO: Consolidado de todos los quizzes del cliente -->
+        <RouterLink
+          :to="`/pulso/${activeClientSlug}/todo${currentSubPath}`"
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded transition-all text-[11px] whitespace-nowrap"
+          :class="activeQuizKey === 'todo'
+            ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-glow-cyan'
+            : 'text-slate-400 hover:text-slate-200 border border-transparent hover:bg-slate-800/50'"
+        >
+          <span>🌐</span>
+          <span>TODO</span>
+        </RouterLink>
+
         <RouterLink
           v-for="q in clientQuizzes"
           :key="q.quiz_key"
@@ -152,8 +164,6 @@ const currentSubPath = computed(() => {
 })
 
 function onClientSelect(newClientSlug: string) {
-  const targetClient = MOCK_CLIENTS.find(c => c.slug === newClientSlug)
-  const firstQuiz = targetClient?.quizzes[0]?.quiz_key || 'quiz1'
-  router.push(`/pulso/${newClientSlug}/${firstQuiz}${currentSubPath.value}`)
+  router.push(`/pulso/${newClientSlug}/todo${currentSubPath.value}`)
 }
 </script>
