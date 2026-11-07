@@ -46,6 +46,31 @@ const router = createRouter({
       name: 'analytics',
       component: AnalyticsDashboardView,
     },
+    // 📡 PULSO TELEMETRÍA & MULTI-TENANT ENGINE
+    {
+      path: '/pulso',
+      name: 'pulso-portal',
+      component: () => import('@/pulso/views/SiteSelectorView.vue'),
+    },
+    {
+      path: '/pulso/:clientSlug/:quizSlug',
+      name: 'pulso-client-dashboard',
+      component: () => import('@/pulso/views/DashboardView.vue'),
+    },
+    {
+      path: '/pulso/:clientSlug/:quizSlug/live',
+      name: 'pulso-client-live',
+      component: () => import('@/pulso/views/LiveView.vue'),
+    },
+    {
+      path: '/pulso/:clientSlug/:quizSlug/leads',
+      name: 'pulso-client-leads',
+      component: () => import('@/pulso/views/LeadsView.vue'),
+    },
+    {
+      path: '/pulso/:clientSlug',
+      redirect: to => `/pulso/${to.params.clientSlug}/quiz1`,
+    },
   ],
 })
 

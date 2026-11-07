@@ -40,6 +40,15 @@
           </div>
         </div>
 
+        <!-- Pulso Telemetry Hub -->
+        <RouterLink to="/pulso" :class="['group relative flex items-center rounded-xl p-3 transition-all', isSidebarExpanded ? 'justify-start gap-3' : 'justify-center', 'text-cyan-400 hover:bg-slate-800 hover:text-cyan-300 font-medium']" title="Abrir Pulso Telemetría Multi-Cliente">
+          <Activity :size="20" class="shrink-0 text-cyan-400" />
+          <span v-if="isSidebarExpanded" class="text-sm flex items-center gap-1.5">
+            <span>Pulso Telemetría</span>
+            <span class="rounded bg-cyan-500/20 px-1.5 py-0.5 text-[9px] font-mono text-cyan-300">LIVE</span>
+          </span>
+        </RouterLink>
+
         <button :class="['group relative flex items-center rounded-xl p-3 transition-all text-slate-400 hover:bg-slate-800 hover:text-white', isSidebarExpanded ? 'justify-start gap-3' : 'justify-center']">
           <Bell :size="20" class="shrink-0" />
           <span v-if="isSidebarExpanded" class="font-medium text-sm">Notificaciones</span>

@@ -34,12 +34,17 @@
       <button @click="$emit('refresh')" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-sm transition duration-150 ease-in-out font-medium flex items-center gap-2 text-sm">
         <span>🔄</span> Actualizar
       </button>
+
+      <RouterLink to="/pulso" class="bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 py-2 px-3.5 rounded-lg shadow-sm transition duration-150 ease-in-out font-medium flex items-center gap-1.5 text-sm font-mono">
+        <span>📡</span> Pulso Hub
+      </RouterLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { RouterLink } from 'vue-router';
 
 defineEmits(['refresh', 'auto-refresh']);
 const autoRefresh = ref('0');
