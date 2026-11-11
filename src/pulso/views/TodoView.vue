@@ -242,6 +242,23 @@
             :low-data-warning="heatmapLowDataWarning"
           />
         </div>
+
+        <!-- 5. TIEMPOS ENTRE ETAPAS (Mediana + P90, personas en curso) -->
+        <div class="hud-card">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-pulso-border/50">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 bg-amber-400 rounded-full"></span>
+              <h3 class="font-tech text-xs tracking-wider uppercase text-slate-200 font-bold">
+                Tiempos entre Etapas del Cliente
+              </h3>
+            </div>
+            <div class="text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+              <span>⏱️</span>
+              <span>MEDIANA + P90 (caso lento)</span>
+            </div>
+          </div>
+          <JourneyTimingsChart :data="journeyData" />
+        </div>
       </main>
     </div>
   </div>
@@ -256,6 +273,7 @@ import SidebarNav from '@/pulso/components/SidebarNav.vue'
 import TodoFunnelChart from '@/pulso/components/TodoFunnelChart.vue'
 import QuizRankingTable from '@/pulso/components/QuizRankingTable.vue'
 import HeatmapChart from '@/pulso/components/HeatmapChart.vue'
+import JourneyTimingsChart from '@/pulso/components/JourneyTimingsChart.vue'
 import VisitsChart from '@/pulso/components/VisitsChart.vue'
 import SourcesChart from '@/pulso/components/SourcesChart.vue'
 import type { QuizConfig } from '@/pulso/types'
@@ -276,6 +294,7 @@ const {
   heatmapData,
   heatmapLowDataWarning,
   heatmapWeekdays,
+  journeyData,
 } = usePulsoTodoData(clientSlugParam.value)
 
 const todoQuizConfig = computed<QuizConfig>(() => ({

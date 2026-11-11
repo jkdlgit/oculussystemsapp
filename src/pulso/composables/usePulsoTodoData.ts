@@ -12,6 +12,8 @@ import type {
   TodoFunnelStep,
   QuizRankingRow,
   HeatmapCell,
+  JourneyData,
+  JourneySegment,
   DailyVisit,
   Lead,
   Event
@@ -784,6 +786,181 @@ export function usePulsoTodoData(clientSlugParam: string) {
   const heatmapWeekdays = WEEKDAYS
 
   // ---------------------------------------------------------------------------
+  // ETAPA 3: TIEMPOS ENTRE ETAPAS (Mediana + P90, personas en curso)
+  // ---------------------------------------------------------------------------
+
+  // Calcula mediana de un array de números (en ms)
+  function calcMedian(arr: number[]): number {
+    if (arr.length === 0) return 0
+    const sorted = [...arr].sort((a, b) => a - b)
+    const mid = Math.floor(sorted.length / 2)
+    return sorted.length % 2 !== 0
+      ? sorted[mid]
+      : (sorted[mid - 1] + sorted[mid]) / 2
+  }
+
+  // Calcula percentil N de un array de números
+  function calcPercentile(arr: number[], pct: number): number {
+    if (arr.length === 0) return 0
+    const sorted = [...arr].sort((a, b) => a - b)
+    const idx = Math.ceil((pct / 100) * sorted.length) - 1
+    return sorted[Math.max(0, idx)]
+  }
+
+  const journeyData = computed<JourneyData>(() => {
+    const { currentStart, currentEnd } = dateWindows.value
+    const leads = allClientLeads.value.filter(l =>
+      isInRange(l.created_at, currentStart, currentEnd)
+    )
+
+    const nowMs = Date.now()
+
+    // ---- Tramo 1: Entrada → Quiz Completado ----
+    const t1Durations: number[] = []
+    let t1InProgress = 0
+    leads.forEach(l => {
+      const entradaMs = new Date(l.created_at || '').getTime()
+      if (isNaN(entradaMs)) return
+      const resp = (l.respuestas as any) || {}
+      const isCompleted =
+        (resp.paso && resp.paso >= 4) ||
+        resp.visionCheck_score ||
+        l.estado === 'Viendo Resultados' ||
+        l.estado === 'Completado' ||
+        l.estado === 'Agendado' ||
+        l.estado === 'Atendido'
+
+      if (isCompleted && l.updated_at) {
+        const updMs = new Date(l.updated_at).getTime()
+        if (!isNaN(updMs) && updMs > entradaMs) {
+          t1Durations.push(updMs - entradaMs)
+        }
+      } else if (!isCompleted) {
+        t1InProgress += 1
+      }
+    })
+
+    // ---- Tramo 2: Completado → Reserva ----
+    const t2Durations: number[] = []
+    let t2InProgress = 0
+    leads.forEach(l => {
+      const entradaMs = new Date(l.created_at || '').getTime()
+      if (isNaN(entradaMs)) return
+      const isCompleted =
+        l.estado === 'Viendo Resultados' ||
+        l.estado === 'Completado' ||
+        l.estado === 'Agendado' ||
+        l.estado === 'Atendido'
+      const isReserved =
+        l.estado === 'Agendado' ||
+        l.estado === 'Atendido' ||
+        !!l.fecha_cita
+
+      if (isCompleted && isReserved && l.fecha_cita) {
+        const citaMs = new Date(l.fecha_cita).getTime()
+        if (!isNaN(citaMs) && citaMs > entradaMs) {
+          t2Durations.push(citaMs - entradaMs)
+        }
+      } else if (isCompleted && !isReserved) {
+        t2InProgress += 1
+      }
+    })
+
+    // ---- Tramo 3: Reserva → Llegó al Local ----
+    const t3Durations: number[] = []
+    let t3InProgress = 0
+    leads.forEach(l => {
+      if (!l.fecha_cita) return
+      const citaMs = new Date(l.fecha_cita).getTime()
+      if (isNaN(citaMs)) return
+      const isReserved = l.estado === 'Agendado' || l.estado === 'Atendido' || !!l.fecha_cita
+      if (!isReserved) return
+
+      if (l.estado_cita === 'Atendida' && l.updated_at) {
+        const atendidaMs = new Date(l.updated_at).getTime()
+        if (!isNaN(atendidaMs) && atendidaMs > citaMs) {
+          t3Durations.push(atendidaMs - citaMs)
+        }
+      } else if (citaMs > nowMs) {
+        // Cita futura → en curso, no contar como no-asistido
+        t3InProgress += 1
+      }
+    })
+
+    // ---- Tramo 4: Llegó al Local → Venta ----
+    const t4Durations: number[] = []
+    let t4InProgress = 0
+    const pedidosValidos = rawPedidos.value.filter(p => p.estado_pago === 'Pagado total')
+
+    if (currentClient.value.has_local_crm) {
+      leads.forEach(l => {
+        if (l.estado_cita !== 'Atendida') return
+        const atendidaMs = new Date(l.updated_at || '').getTime()
+        if (isNaN(atendidaMs)) return
+        // Buscar paciente → pedido
+        const pac = rawPacientes.value.find(p => String(p.lead_id) === String(l.id))
+        if (!pac) { t4InProgress += 1; return }
+        const ped = pedidosValidos.find(p => String(p.paciente_id) === String(pac.id))
+        if (ped && ped.created_at) {
+          const pedMs = new Date(ped.created_at).getTime()
+          if (!isNaN(pedMs) && pedMs > atendidaMs) {
+            t4Durations.push(pedMs - atendidaMs)
+          }
+        } else {
+          t4InProgress += 1
+        }
+      })
+    }
+
+    // ---- Tramo 5: Venta → Entrega de Lentes ----
+    const t5Durations: number[] = []
+    let t5InProgress = 0
+    const hasDeliveryData = pedidosValidos.some(p => !!p.fecha_entrega_real)
+
+    pedidosValidos.forEach(p => {
+      if (!p.created_at) return
+      const pedMs = new Date(p.created_at).getTime()
+      if (isNaN(pedMs)) return
+      if (p.fecha_entrega_real) {
+        const entregaMs = new Date(p.fecha_entrega_real).getTime()
+        if (!isNaN(entregaMs) && entregaMs > pedMs) {
+          t5Durations.push(entregaMs - pedMs)
+        }
+      } else if (p.estado_pedido !== 'Entregado') {
+        t5InProgress += 1
+      }
+    })
+
+    const makeSegment = (
+      key: string,
+      label: string,
+      from: string,
+      to: string,
+      durations: number[],
+      inProgress: number
+    ): JourneySegment => ({
+      key,
+      label,
+      from,
+      to,
+      medianMs: calcMedian(durations),
+      p90Ms: calcPercentile(durations, 90),
+      sampleSize: durations.length,
+      inProgress,
+    })
+
+    const segments: JourneySegment[] = [
+      makeSegment('entrada_quiz', 'Entrada → Quiz Completo', 'Entrada', 'Quiz Completo', t1Durations, t1InProgress),
+      makeSegment('quiz_reserva', 'Quiz → Reserva', 'Quiz Completo', 'Reserva', t2Durations, t2InProgress),
+      makeSegment('reserva_local', 'Reserva → Llegó al Local', 'Reserva', 'Llegó al Local', t3Durations, t3InProgress),
+      makeSegment('local_venta', 'Local → Venta', 'Llegó al Local', 'Venta', t4Durations, t4InProgress),
+      makeSegment('venta_entrega', 'Venta → Entrega de Lentes', 'Venta', 'Entrega', t5Durations, t5InProgress),
+    ]
+
+    return { segments, hasDeliveryData }
+  })
+
+  // ---------------------------------------------------------------------------
   // Polling automático cada 2s
   let pollInterval: ReturnType<typeof setInterval>
 
@@ -811,6 +988,7 @@ export function usePulsoTodoData(clientSlugParam: string) {
     heatmapData,
     heatmapLowDataWarning,
     heatmapWeekdays,
+    journeyData,
     loading,
     refreshData: loadData,
   }

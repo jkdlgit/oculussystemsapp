@@ -70,6 +70,7 @@ export interface Lead {
   hora_cita?: string
   utm_source?: string
   created_at: string
+  updated_at?: string   // Fecha de última actualización del lead (completado, agendado, atendido)
 }
 
 // Estructura de Métricas Estandarizadas Pulso
@@ -150,4 +151,20 @@ export interface HeatmapCell {
   llegaron: number
   ventas: number
   tasa: number      // % visitas → reservas (modo calidad)
+}
+
+export interface JourneySegment {
+  key: string           // 'entrada_quiz', 'quiz_reserva', etc.
+  label: string         // Etiqueta visible
+  from: string          // Nombre de la etapa origen
+  to: string            // Nombre de la etapa destino
+  medianMs: number      // Mediana en milisegundos
+  p90Ms: number         // Percentil 90 en milisegundos
+  sampleSize: number    // Número de personas medidas
+  inProgress: number    // Personas aún en este tramo (sin completarlo)
+}
+
+export interface JourneyData {
+  segments: JourneySegment[]
+  hasDeliveryData: boolean  // Si hay datos de fecha_entrega_real
 }
