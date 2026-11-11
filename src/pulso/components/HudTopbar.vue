@@ -57,7 +57,7 @@
             ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-glow-cyan'
             : 'text-slate-400 hover:text-slate-200 border border-transparent hover:bg-slate-800/50'"
         >
-          <span>{{ q.quiz_key === 'quiz2' ? '🧪' : '👁️' }}</span>
+          <span>{{ q.quiz_key === 'quiz2' ? '🧪' : q.quiz_key === 'quiz3' ? '⚡' : '👁️' }}</span>
           <span>{{ q.name.replace(/\(.*?\)/g, '').trim() || q.quiz_key.toUpperCase() }}</span>
         </RouterLink>
       </div>

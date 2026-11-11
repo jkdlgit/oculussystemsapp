@@ -89,7 +89,7 @@
                   class="flex items-center justify-between p-2.5 rounded-lg bg-pulso-surface/80 hover:bg-cyan-500/10 border border-pulso-border hover:border-cyan-500/40 transition-all text-xs font-mono group/quiz"
                 >
                   <div class="flex items-center gap-2 truncate">
-                    <span class="text-sm">{{ quiz.quiz_key === 'quiz2' ? '🧪' : '👁️' }}</span>
+                    <span class="text-sm">{{ quiz.quiz_key === 'quiz2' ? '🧪' : quiz.quiz_key === 'quiz3' ? '⚡' : '👁️' }}</span>
                     <span class="text-slate-200 font-semibold group-hover/quiz:text-cyan-300 transition-colors truncate">
                       {{ quiz.name }}
                     </span>

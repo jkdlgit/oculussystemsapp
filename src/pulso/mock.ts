@@ -28,6 +28,14 @@ export const MOCK_CLIENTS: Client[] = [
         active: true,
         created_at: '2026-11-06T00:00:00Z',
       },
+      {
+        id: 'quiz3',
+        quiz_key: 'quiz3',
+        name: 'Quiz 3 (Fatiga Visual & Luz Azul)',
+        url: 'http://localhost:5173/opticajohanna/quiz3',
+        active: true,
+        created_at: '2026-11-10T00:00:00Z',
+      },
     ],
   },
   {
@@ -90,6 +98,16 @@ export const MOCK_SITES: Site[] = [
     active: true,
     has_local_crm: true,
     created_at: '2026-11-06T00:00:00Z',
+  },
+  {
+    id: 'quiz3',
+    site_key: 'quiz3',
+    name: 'Oculus // Quiz 3 (Fatiga Visual y Luz Azul)',
+    url: 'http://localhost:5173/quiz3',
+    owner_email: 'admin@pulso.local',
+    active: true,
+    has_local_crm: true,
+    created_at: '2026-11-10T00:00:00Z',
   },
   {
     id: 'oculus',

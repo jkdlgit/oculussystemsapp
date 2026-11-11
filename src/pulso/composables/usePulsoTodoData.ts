@@ -90,7 +90,7 @@ export function usePulsoTodoData(clientSlugParam: string) {
           let queryLeads = supabase.from('leads').select('*').order('created_at', { ascending: false })
 
           if (clientSlug.value === 'opticajohanna' || clientSlug.value === 'oculus') {
-            queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1,origen.is.null')
+            queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1,origen.eq.quiz3,origen.eq.opticajohanna_quiz3,origen.is.null')
           } else {
             const quizFilters = clientQuizzes.value.map(q => `origen.eq.${clientSlug.value}_${q.quiz_key}`).join(',')
             queryLeads = queryLeads.or(`${quizFilters},origen.eq.${clientSlug.value}`)
@@ -105,7 +105,7 @@ export function usePulsoTodoData(clientSlugParam: string) {
                 .schema('pro')
                 .from('leads')
                 .select('*')
-                .or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1,origen.is.null')
+                .or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1,origen.eq.quiz3,origen.eq.opticajohanna_quiz3,origen.is.null')
                 .order('created_at', { ascending: false })
 
               if (proLeadsData) {
@@ -325,7 +325,10 @@ export function usePulsoTodoData(clientSlugParam: string) {
         llegaron,
         ventasCount,
         ingresosTotal,
-        activeNow: Math.max(1, visitas > 0 ? 1 : 0),
+        activeNow: filteredLeads.filter(l => {
+          const t = new Date(l.created_at).getTime()
+          return !isNaN(t) && t >= (Date.now() - 15 * 60 * 1000)
+        }).length,
       },
       pastReservasCount,
     }

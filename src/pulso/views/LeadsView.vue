@@ -50,6 +50,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePulsoData } from '@/pulso/composables/usePulsoData'
+import { supabase, hasSupabaseConfig } from '@/supabase'
 import type { Lead } from '@/pulso/types'
 import HudTopbar from '@/pulso/components/HudTopbar.vue'
 import SidebarNav from '@/pulso/components/SidebarNav.vue'
@@ -75,10 +76,17 @@ const filteredLeads = computed(() => {
   return leadsList.value.filter(l => l.estado === filterStatus.value)
 })
 
-function updateLeadStatus(leadId: number, newStatus: Lead['estado']) {
+async function updateLeadStatus(leadId: number, newStatus: Lead['estado']) {
   const lead = leadsList.value.find(l => l.id === leadId)
   if (lead) {
     lead.estado = newStatus
+  }
+  if (hasSupabaseConfig) {
+    try {
+      await supabase.from('leads').update({ estado: newStatus }).eq('id', leadId)
+    } catch (e) {
+      console.warn('Error actualizando estado de lead en Supabase:', e)
+    }
   }
 }
 

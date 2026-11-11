@@ -126,8 +126,10 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
               queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.is.null')
             } else if (quizSlug.value === 'quiz2' || quizSlug.value === 'visioncheck1') {
               queryLeads = queryLeads.or('origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1')
+            } else if (quizSlug.value === 'quiz3') {
+              queryLeads = queryLeads.or('origen.eq.quiz3,origen.eq.opticajohanna_quiz3')
             } else {
-              queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.quiz2,origen.is.null')
+              queryLeads = queryLeads.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.quiz2,origen.eq.quiz3,origen.is.null')
             }
           } else {
             const targetSite = `${clientSlug.value}_${quizSlug.value}`
@@ -145,6 +147,8 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
                 proQuery = proQuery.or('origen.eq.Quiz,origen.eq.quiz1,origen.eq.opticajohanna_quiz1,origen.is.null')
               } else if (quizSlug.value === 'quiz2' || quizSlug.value === 'visioncheck1') {
                 proQuery = proQuery.or('origen.eq.quiz2,origen.eq.opticajohanna_quiz2,origen.eq.visioncheck1,origen.eq.opticajohanna_visioncheck1')
+              } else if (quizSlug.value === 'quiz3') {
+                proQuery = proQuery.or('origen.eq.quiz3,origen.eq.opticajohanna_quiz3')
               }
               const { data: proLeadsData } = await proQuery
               if (proLeadsData) {
@@ -239,6 +243,66 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
 
       // 5. Calcular métricas estrictas
       calculateStrictMetrics(pacientesList, pedidosList)
+
+      // 6. Si no hay eventos en la tabla events, derivar flujo real a partir de leads para telemetría en vivo
+      if (events.value.length === 0 && leads.value.length > 0) {
+        const derived: Event[] = []
+        leads.value.forEach((l) => {
+          const isMobile = (l.respuestas as any)?.dispositivo === 'móvil'
+          const devType = isMobile ? 'mobile' : 'desktop'
+
+          // Evento de Visita
+          derived.push({
+            id: l.id * 10 + 1,
+            site_id: l.site_id,
+            session_id: `ses_${l.id}`,
+            event_type: 'pageview',
+            event_name: 'visita_iniciada',
+            page_url: `/${l.client_id || 'opticajohanna'}/${l.quiz_id || 'quiz3'}`,
+            country: 'EC',
+            device: devType,
+            utm_source: l.utm_source || 'directo',
+            metadata: { lead_id: l.id, estado: l.estado },
+            created_at: l.created_at
+          })
+
+          // Evento de Paso
+          const resp = (l.respuestas as any) || {}
+          if (resp.paso && resp.paso >= 1) {
+            derived.push({
+              id: l.id * 10 + 2,
+              site_id: l.site_id,
+              session_id: `ses_${l.id}`,
+              event_type: 'step_complete',
+              event_name: `paso_${resp.paso}_completado`,
+              page_url: `/${l.client_id || 'opticajohanna'}/${l.quiz_id || 'quiz3'}`,
+              country: 'EC',
+              device: devType,
+              utm_source: l.utm_source || 'directo',
+              metadata: { paso: resp.paso, respuestas: resp },
+              created_at: l.created_at
+            })
+          }
+
+          // Evento de Conversión / Reserva
+          if (l.estado === 'Viendo Resultados' || l.estado === 'Completado' || l.estado === 'Agendado' || l.estado === 'Atendido') {
+            derived.push({
+              id: l.id * 10 + 3,
+              site_id: l.site_id,
+              session_id: `ses_${l.id}`,
+              event_type: 'conversion',
+              event_name: l.estado === 'Agendado' ? 'reserva_agendada' : 'test_completado',
+              page_url: `/${l.client_id || 'opticajohanna'}/${l.quiz_id || 'quiz3'}`,
+              country: 'EC',
+              device: devType,
+              utm_source: l.utm_source || 'directo',
+              metadata: { nombre: l.nombre, telefono: l.telefono, cita: l.fecha_cita },
+              created_at: l.created_at
+            })
+          }
+        })
+        events.value = derived.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      }
 
     } catch (err) {
       console.error('[PULSO] Error en sincronización telemétrica:', err)
@@ -338,6 +402,13 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
       ingresosTotal = uniquePagos.reduce((acc: number, p: any) => acc + (Number(p.total) || 0), 0)
     }
 
+    // Contar usuarios con actividad en los últimos 15 minutos (0 si no hay nadie)
+    const quinceMinutosAtras = Date.now() - 15 * 60 * 1000
+    const activeNowReal = leads.value.filter(l => {
+      const t = new Date(l.created_at).getTime()
+      return !isNaN(t) && t >= quinceMinutosAtras
+    }).length
+
     // Asignar al KPI
     kpi.value = {
       visitas,
@@ -349,7 +420,7 @@ export function usePulsoData(clientOrSiteKey: string, quizSlugParam?: string) {
       llegaron,
       ventasCount,
       ingresosTotal,
-      activeNow: Math.max(1, visitas > 0 ? 1 : 0),
+      activeNow: activeNowReal,
     }
 
     // F) Embudo (Funnel)
