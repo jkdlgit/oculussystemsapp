@@ -155,7 +155,6 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
           telefono: 'Sin registrar',
           edad: 0,
           origen: siteOrigin,
-          client_id: clientSlug.value,
           utm_source: utmParams.source || null,
           utm_medium: utmParams.medium || null,
           utm_campaign: utmParams.campaign || null,
@@ -164,6 +163,7 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
           respuestas: {
             quiz: quizKey.value,
             client: clientSlug.value,
+            client_id: clientSlug.value,
             dispositivo: typeof navigator !== 'undefined' && /Mobile|Android|iP(hone|od)/.test(navigator.userAgent) ? 'móvil' : 'desktop'
           }
         }
@@ -320,11 +320,15 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
           const insertPayload = {
             ...updatePayload,
             origen: `${clientSlug.value}_${quizKey.value}`,
-            client_id: clientSlug.value,
             utm_source: utmParams.source || null,
             utm_medium: utmParams.medium || null,
             utm_campaign: utmParams.campaign || null,
             owner: owner.value,
+            respuestas: {
+              ...(updatePayload.respuestas || {}),
+              client: clientSlug.value,
+              client_id: clientSlug.value,
+            }
           }
           const { data: newLead, error } = await supabase
             .from('leads')
