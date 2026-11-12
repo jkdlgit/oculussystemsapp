@@ -70,6 +70,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { supabase, hasSupabaseConfig } from '@/supabase'
 import type { QuizData } from '@/types'
+import { usePulsoTracker } from '@/pulso/composables/usePulsoTracker'
 import ProgressBar from '@/components/ProgressBar.vue'
 import Step0Welcome from '@/components/Step0Welcome.vue'
 import Step1PersonalData from '@/components/Step1PersonalData.vue'
@@ -77,6 +78,13 @@ import Step2Symptoms from '@/components/Step2Symptoms.vue'
 import Step3Vision from '@/components/Step3Vision.vue'
 import Step4Colors from '@/components/Step4Colors.vue'
 import Step5Result from '@/components/Step5Result.vue'
+
+// Tracker universal sincronizado con Pulso Analytics
+const tracker = usePulsoTracker({
+  clientSlug: 'opticajohanna',
+  quizKey: 'quiz1',
+  quizName: 'Quiz 1 · Chequeo Visual Integral',
+})
 
 declare global {
   interface Window {
@@ -184,13 +192,14 @@ async function handleStep1(data: { nombre: string; telefono: string; edad: numbe
 
   // 1️⃣ Pulso: Marcar Paso 1 completado
   window.pulso?.step(1, { nombre: data.nombre, edad: data.edad })
+  tracker.trackStep(1, { nombre: data.nombre, edad: data.edad })
 
   if (hasSupabaseConfig) {
     const payload = {
       nombre: quiz.nombre,
       telefono: quiz.telefono,
       edad: quiz.edad,
-      respuestas: { etapa: 'paso_1', paso: 1 },
+      respuestas: { etapa: 'paso_1', paso: 1, client_id: 'opticajohanna', quiz: 'quiz1' },
       utm_source: quiz.utmSource || null,
       utm_medium: quiz.utmMedium || null,
       utm_campaign: quiz.utmCampaign || null,
@@ -220,12 +229,13 @@ async function handleStep2(sintomas: string[]) {
 
   // 2️⃣ Pulso: Marcar Paso 2 completado
   window.pulso?.step(2, { sintomasCount: sintomas.length })
+  tracker.trackStep(2, { sintomas })
 
   if (hasSupabaseConfig && quiz.leadId) {
     try {
       await supabase.from('leads').update({
         estado: 'Paso 2',
-        respuestas: { sintomas, etapa: 'paso_2', paso: 2 }
+        respuestas: { sintomas, etapa: 'paso_2', paso: 2, client_id: 'opticajohanna', quiz: 'quiz1' }
       }).eq('id', quiz.leadId)
     } catch (e) {}
   }
@@ -238,12 +248,13 @@ async function handleStep3(data: { lejos: string; cerca: string }) {
 
   // 3️⃣ Pulso: Marcar Paso 3 completado
   window.pulso?.step(3, { lejos: data.lejos, cerca: data.cerca })
+  tracker.trackStep(3, { vision_lejos: data.lejos, vision_cerca: data.cerca })
 
   if (hasSupabaseConfig && quiz.leadId) {
     try {
       await supabase.from('leads').update({
         estado: 'Paso 3',
-        respuestas: { sintomas: quiz.sintomas, vision_lejos: data.lejos, vision_cerca: data.cerca, etapa: 'paso_3', paso: 3 }
+        respuestas: { sintomas: quiz.sintomas, vision_lejos: data.lejos, vision_cerca: data.cerca, etapa: 'paso_3', paso: 3, client_id: 'opticajohanna', quiz: 'quiz1' }
       }).eq('id', quiz.leadId)
     } catch (e) {}
   }
@@ -254,11 +265,17 @@ async function handleStep4(data: { problema: string; detalle: string }) {
   quiz.detalleColores = data.detalle
   step.value = 5
 
-  // ✅ Pulso: Marcar COMPLETADOS (Terminó el quiz antes de agendar o WhatsApp)
+  // ✅ Pulso: Marcar COMPLETADOS
   window.pulso?.completed({
     nombre: quiz.nombre,
     telefono: quiz.telefono,
     problemasColores: data.problema
+  })
+
+  tracker.trackCompleted({
+    score: 80,
+    diagnosis: 'Evaluación Visual Completada',
+    answers: { sintomas: quiz.sintomas, vision_lejos: quiz.visionLejos, vision_cerca: quiz.visionCerca, problemas_colores: data.problema }
   })
 
   window.pulso?.lead({

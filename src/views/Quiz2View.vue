@@ -28,11 +28,19 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase, hasSupabaseConfig } from '@/supabase'
+import { usePulsoTracker } from '@/pulso/composables/usePulsoTracker'
 import VCWelcome from '@/components/visioncheck1/VCWelcome.vue'
 import VCPrueba from '@/components/visioncheck1/VCPrueba.vue'
 import VCResultado from '@/components/visioncheck1/VCResultado.vue'
 import VCFormulario from '@/components/visioncheck1/VCFormulario.vue'
 import VCFinal from '@/components/visioncheck1/VCFinal.vue'
+
+// Tracker universal sincronizado con Pulso Analytics
+const tracker = usePulsoTracker({
+  clientSlug: 'opticajohanna',
+  quizKey: 'quiz2',
+  quizName: 'Quiz 2 · VisiónCheck Agudeza Visual',
+})
 
 declare global {
   interface Window {
@@ -126,12 +134,13 @@ onMounted(async () => {
 async function handleStart() {
   step.value = 1
   window.pulso?.step(1, { action: 'iniciar_prueba_visioncheck' })
+  tracker.trackStep(1, { action: 'iniciar_prueba_visioncheck' })
 
   if (hasSupabaseConfig && leadId.value) {
     try {
       await supabase.from('leads').update({
         estado: 'Paso 1',
-        respuestas: { etapa: 'prueba_iniciada', paso: 1, test: 'visioncheck1' }
+        respuestas: { etapa: 'prueba_iniciada', paso: 1, test: 'visioncheck1', client_id: 'opticajohanna', quiz: 'quiz2' }
       }).eq('id', leadId.value)
     } catch (e) {}
   }
@@ -145,12 +154,15 @@ async function handleTestFinish(score: string) {
   window.pulso?.step(2, { score })
   window.pulso?.completed({ score, test: 'visioncheck1' })
 
+  tracker.trackStep(2, { score })
+  tracker.trackCompleted({ score, diagnosis: `Agudeza estimada: ${score}` })
+
   if (hasSupabaseConfig && leadId.value) {
     try {
       await supabase.from('leads').update({
         estado: 'Viendo Resultados',
         resultado: 'Agudeza visual estimada: ' + score,
-        respuestas: { visionCheck_score: score, etapa: 'completado', paso: 2, test: 'visioncheck1' }
+        respuestas: { visionCheck_score: score, etapa: 'completado', paso: 2, test: 'visioncheck1', client_id: 'opticajohanna', quiz: 'quiz2' }
       }).eq('id', leadId.value)
       console.log('📡 [PULSO] Prueba VisiónCheck completada, score:', score)
     } catch (err) {
@@ -162,9 +174,10 @@ async function handleTestFinish(score: string) {
 function handleGoToForm() {
   step.value = 3
   window.pulso?.step(3, { action: 'abrir_formulario_reserva' })
+  tracker.trackStep(3, { action: 'abrir_formulario_reserva' })
 }
 
-function handleFormSubmit(formData: { nombre: string; telefono: string; edad: number }) {
+async function handleFormSubmit(formData: { nombre: string; telefono: string; edad: number }) {
   step.value = 4
 
   // Telemetría Pulso: Reserva completada
@@ -172,6 +185,13 @@ function handleFormSubmit(formData: { nombre: string; telefono: string; edad: nu
     action: 'reserva_formulario_visioncheck',
     nombre: formData.nombre,
     score: acuityScore.value
+  })
+
+  await tracker.trackBooking({
+    nombre: formData.nombre,
+    telefono: formData.telefono,
+    edad: formData.edad,
+    metadata: { score: acuityScore.value, test: 'visioncheck1' }
   })
 }
 

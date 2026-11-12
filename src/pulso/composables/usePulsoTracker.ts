@@ -25,6 +25,24 @@ export interface CompletedPayload {
   answers?: Record<string, any>
 }
 
+let broadcastChannel: BroadcastChannel | null = null
+if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+  try {
+    broadcastChannel = new BroadcastChannel('pulso_analytics_channel')
+  } catch (e) { /* noop */ }
+}
+
+function broadcastEvent(event: any, session?: any, visitor?: any) {
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({
+        type: 'PULSO_EVENT',
+        payload: { event, session, visitor }
+      })
+    } catch (e) {}
+  }
+}
+
 // Helper para acceso seguro a window.pulso
 function getPulso() {
   if (typeof window !== 'undefined' && (window as any).pulso) {
@@ -192,8 +210,29 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
   /**
    * 1️⃣ Marcar avance de paso (Paso 1, 2, 3...)
    */
-  async function trackStep(stepNumber: number, stepData: Record<string, any> = {}) {
+  async function trackStep(stepNumber: number, stepData: Record<string, any> = {}, clickEvent?: MouseEvent) {
     getPulso()?.step(stepNumber, stepData)
+
+    const coords = clickEvent ? {
+      x: Math.round((clickEvent.clientX / window.innerWidth) * 100),
+      y: Math.round((clickEvent.clientY / window.innerHeight) * 100),
+    } : { x: 50, y: 50 }
+
+    broadcastEvent({
+      id: Date.now(),
+      business_id: 'optica',
+      session_id: sessionId.value,
+      visitor_id: `v_${clientSlug.value}`,
+      ts: new Date().toISOString(),
+      type: 'quiz_step',
+      page: `/${quizKey.value}`,
+      label: `Paso ${stepNumber}`,
+      metadata: { step: stepNumber, ...stepData, ...coords },
+    }, {
+      id: sessionId.value,
+      clicks: stepNumber + 1,
+      scroll_avg: Math.min(100, 30 + stepNumber * 20),
+    })
 
     if (hasSupabaseConfig && leadId.value) {
       try {
@@ -224,6 +263,22 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
    */
   async function trackCompleted(payload: CompletedPayload) {
     getPulso()?.completed(payload)
+
+    broadcastEvent({
+      id: Date.now(),
+      business_id: 'optica',
+      session_id: sessionId.value,
+      visitor_id: `v_${clientSlug.value}`,
+      ts: new Date().toISOString(),
+      type: 'quiz_complete',
+      page: '/resultado',
+      label: `Diagnóstico: ${payload.diagnosis || 'Completado'}`,
+      metadata: { score: payload.score, diagnosis: payload.diagnosis },
+    }, {
+      id: sessionId.value,
+      quiz_completed: true,
+      form_started: true,
+    })
 
     if (hasSupabaseConfig && leadId.value) {
       try {
@@ -284,6 +339,23 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
       fecha_cita: booking.fecha_cita,
       hora_cita: booking.hora_cita,
       action: 'reserva_confirmada'
+    })
+
+    broadcastEvent({
+      id: Date.now(),
+      business_id: 'optica',
+      session_id: sessionId.value,
+      visitor_id: `v_${clientSlug.value}`,
+      ts: new Date().toISOString(),
+      type: 'booking',
+      page: '/agendar',
+      label: `Cita Agendada: ${cleanName}`,
+      metadata: { fecha: booking.fecha_cita, hora: booking.hora_cita, sucursal: booking.sucursal },
+    }, {
+      id: sessionId.value,
+      booked: true,
+      form_submitted: true,
+      lead_captured: true,
     })
 
     if (hasSupabaseConfig) {
