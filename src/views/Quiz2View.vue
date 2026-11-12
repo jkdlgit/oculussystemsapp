@@ -100,34 +100,9 @@ onMounted(async () => {
     window.pulso?.visit()
   }
 
-  // Registrar visita inmediata en Supabase (solo una vez por sesión de pestaña)
-  const sessionVisitKey = `_oculus_visit_${clientSlug.value}_quiz2`
-  const cachedLeadId = sessionStorage.getItem(sessionVisitKey)
-  if (cachedLeadId) {
-    leadId.value = Number(cachedLeadId)
-  } else if (hasSupabaseConfig && !leadId.value) {
-    try {
-      const payload = {
-        nombre: 'Visita Anónima',
-        telefono: 'Sin registrar',
-        edad: 0,
-        respuestas: { etapa: 'visita', paso: 0, test: 'visioncheck1' },
-        estado: 'Visita',
-        origen: 'quiz2',
-        utm_source: params.get('utm_source') || null,
-        utm_medium: params.get('utm_medium') || null,
-        utm_campaign: params.get('utm_campaign') || null,
-        owner: owner.value,
-      }
-      const { data, error } = await supabase.from('leads').insert(payload).select('id').single()
-      if (!error && data) {
-        leadId.value = data.id
-        sessionStorage.setItem(sessionVisitKey, String(data.id))
-        console.log('📡 [PULSO] Visita registrada en Supabase (Quiz 2 / VisiónCheck). Lead ID:', data.id)
-      }
-    } catch (err) {
-      console.warn('📡 [PULSO] Error registrando visita en Supabase:', err)
-    }
+  // Sincronizar leadId con usePulsoTracker
+  if (tracker.leadId.value) {
+    leadId.value = tracker.leadId.value
   }
 })
 
