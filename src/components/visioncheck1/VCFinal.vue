@@ -16,7 +16,7 @@
     </div>
 
     <a
-      href="https://wa.me/593980753069?text=Hola,%20acabo%20de%20completar%20el%20test%20visual%20y%20quiero%20confirmar%20mi%20cita%20gratuita."
+      href="https://wa.me/593980753069?text=Hola!%20deseo%20agendar%20un%20examen%20visual%20gratuito"
       target="_blank"
       @click="$emit('whatsapp')"
       class="w-full bg-[#25D366] hover:bg-[#1ebe57] text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-[#25D366]/30 flex items-center justify-center gap-3 text-lg"

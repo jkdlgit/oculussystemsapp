@@ -289,6 +289,9 @@ async function handleBook() {
       localStorage.setItem(STORAGE_KEY, Date.now().toString());
       booked.value = true;
       (window as any).pulso?.booking({ action: 'agendar_cita' });
+
+      // Enviar directamente a WhatsApp con el mensaje genérico
+      window.location.href = whatsappLink.value;
     }
   } catch (err: any) {
     console.error('[DEBUG-BOOK] Excepción capturada en handleBook:', err);

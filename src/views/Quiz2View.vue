@@ -171,6 +171,10 @@ async function handleGoToFinal() {
       }).eq('id', leadId.value)
     } catch (e) {}
   }
+
+  // Enviar directamente a WhatsApp con el mensaje genérico
+  const waUrl = `https://wa.me/593980753069?text=${encodeURIComponent('Hola! deseo agendar un examen visual gratuito')}`
+  window.location.href = waUrl
 }
 
 async function handleFormSubmit(formData: { nombre: string; telefono: string; edad: number }) {
