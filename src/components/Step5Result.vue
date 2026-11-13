@@ -165,9 +165,9 @@ async function saveLeadImmediately() {
   if (!hasSupabaseConfig) return;
 
   const payload = {
-    nombre: props.quizData.nombre,
-    telefono: props.quizData.telefono,
-    edad: props.quizData.edad,
+    nombre: props.quizData.nombre || 'Visitante',
+    telefono: props.quizData.telefono || '',
+    edad: props.quizData.edad ?? 0,          // fallback 0: el formulario de datos está oculto para reducir fricción
     respuestas: {
       sintomas: props.quizData.sintomas,
       vision_lejos: props.quizData.visionLejos,
@@ -244,9 +244,9 @@ async function handleBook() {
   }
 
   const payload = {
-    nombre: props.quizData.nombre,
-    telefono: props.quizData.telefono,
-    edad: props.quizData.edad,
+    nombre: props.quizData.nombre || 'Visitante',
+    telefono: props.quizData.telefono || '',
+    edad: props.quizData.edad ?? 0,          // fallback 0: formulario de datos oculto para reducir fricción
     respuestas: {
       sintomas: props.quizData.sintomas,
       vision_lejos: props.quizData.visionLejos,

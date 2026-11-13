@@ -11,8 +11,8 @@
         <Transition name="fade" mode="out-in">
           <VCWelcome v-if="step === 0" @start="handleStart" :key="0" />
           <VCPrueba v-else-if="step === 1" @finish="handleTestFinish" :key="1" />
-          <VCResultado v-else-if="step === 2" :score="acuityScore" @next="handleGoToForm" :key="2" />
-          <VCFormulario v-else-if="step === 3" :lead-id="leadId" :score="acuityScore" @submit="handleFormSubmit" :key="3" />
+          <VCResultado v-else-if="step === 2" :score="acuityScore" @next="handleGoToFinal" :key="2" />
+          <!-- VCFormulario eliminado del flujo para reducir fricción: se va directo a VCFinal -->
           <VCFinal v-else-if="step === 4" @whatsapp="handleWhatsAppClick" :key="4" />
         </Transition>
       </div>
@@ -150,6 +150,27 @@ function handleGoToForm() {
   step.value = 3
   window.pulso?.step(3, { action: 'abrir_formulario_reserva' })
   tracker.trackStep(3, { action: 'abrir_formulario_reserva' })
+}
+
+// Va directo a la pantalla final sin pedir datos: reduce fricción de conversión
+async function handleGoToFinal() {
+  step.value = 4
+  window.pulso?.booking({ action: 'reserva_sin_formulario_visioncheck', score: acuityScore.value })
+  await tracker.trackBooking({
+    nombre: '',
+    telefono: '',
+    edad: 0,
+    metadata: { score: acuityScore.value, test: 'visioncheck1', flujo: 'sin_formulario' }
+  })
+  if (hasSupabaseConfig && leadId.value) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Agendado',
+        estado_cita: 'Nueva',
+        respuestas: { visionCheck_score: acuityScore.value, etapa: 'agendado_sin_formulario', paso: 4 }
+      }).eq('id', leadId.value)
+    } catch (e) {}
+  }
 }
 
 async function handleFormSubmit(formData: { nombre: string; telefono: string; edad: number }) {
