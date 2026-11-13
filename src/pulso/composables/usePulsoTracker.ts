@@ -245,7 +245,8 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
               ...stepData,
               etapa: `paso_${stepNumber}`,
               paso: stepNumber,
-              quiz: quizKey.value
+              quiz: quizKey.value,
+              last_click: coords
             }
           })
           .eq('id', leadId.value)
@@ -376,8 +377,9 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
             ...booking.metadata,
             etapa: 'agendado',
             paso: 5,
-            sucursal: booking.sucursal || 'Matriz',
-            quiz: quizKey.value
+            sucursal: booking.sucursal || 'Matriz Guayaquil',
+            quiz: quizKey.value,
+            last_click: { x: 50, y: 80 }
           }
         }
 
