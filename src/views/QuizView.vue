@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-brand-bg flex items-center justify-center p-4 sm:p-6 relative">
-    <!-- Pulso Badge Floating Indicator -->
-    <div class="fixed top-3 right-3 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-xs font-mono shadow-lg backdrop-blur">
+    <!-- Pulso Badge Floating Indicator (Oculto) -->
+    <div v-if="false" class="fixed top-3 right-3 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-xs font-mono shadow-lg backdrop-blur">
       <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
       <span>PULSO TRACKER // ACTIVO [opticajohanna / quiz1]</span>
     </div>
@@ -10,15 +10,16 @@
       <!-- Card Container -->
       <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-10">
 
-        <!-- Progress Bar (hidden on welcome) -->
-        <ProgressBar v-if="step > 0 && step < 5" :current="step" :total="4" />
+        <!-- Progress Bar (oculto en bienvenida, adaptado al flujo clínico sin formulario previo) -->
+        <ProgressBar v-if="step >= 2 && step < 5" :current="step - 1" :total="3" />
 
         <!-- Steps -->
         <Transition name="fade" mode="out-in">
-          <Step0Welcome v-if="step === 0" @next="step = 1" :key="0" />
+          <Step0Welcome v-if="step === 0" @next="step = 2" :key="0" />
 
+          <!-- Formulario de captación de datos oculto temporalmente para reducir fricción de entrada -->
           <Step1PersonalData
-            v-else-if="step === 1"
+            v-if="false"
             :nombre="quiz.nombre"
             :telefono="quiz.telefono"
             :edad="quiz.edad"
@@ -156,7 +157,7 @@ onMounted(async () => {
 })
 
 function handleStart() {
-  step.value = 1
+  step.value = 2
 }
 
 async function handleStep1(data: { nombre: string; telefono: string; edad: number }) {

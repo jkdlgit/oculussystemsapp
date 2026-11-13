@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 relative">
-    <!-- Pulso Badge Floating Indicator -->
-    <div class="fixed top-3 right-3 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-xs font-mono shadow-lg backdrop-blur">
+    <!-- Pulso Badge Floating Indicator (Oculto) -->
+    <div v-if="false" class="fixed top-3 right-3 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-xs font-mono shadow-lg backdrop-blur">
       <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
       <span>PULSO TRACKER // ACTIVO [{{ clientSlug }} / quiz2]</span>
     </div>

@@ -12,7 +12,8 @@
       Realiza esta rápida auto-prueba interactiva de <span class="font-bold text-slate-800">1 minuto</span> para estimar el nivel de tu visión actual.
     </p>
 
-    <div class="bg-blue-50/50 rounded-xl p-5 mb-8 border border-blue-100/50 text-left">
+    <!-- Cuadro de instrucciones (oculto temporalmente para agilizar la lectura) -->
+    <div v-if="false" class="bg-blue-50/50 rounded-xl p-5 mb-8 border border-blue-100/50 text-left">
       <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2 text-lg">
         <span class="text-blue-600">📌</span> Instrucciones:
       </h3>
