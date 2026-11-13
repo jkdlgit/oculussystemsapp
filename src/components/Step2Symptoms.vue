@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2 class="text-2xl font-bold text-brand-dark mb-2">¿Cuál es tu molestia principal en los ojos?</h2>
-    <p class="text-slate-500 mb-8">Selecciona la opción que más se acerca a lo que sientes</p>
+    <p class="text-[20px] text-slate-500 mb-8 leading-snug">Selecciona la opción que más se acerca a lo que sientes</p>
 
     <div class="space-y-3">
       <button
@@ -14,7 +14,7 @@
         :disabled="advancing"
       >
         <span class="text-2xl flex-shrink-0">{{ opt.emoji }}</span>
-        <span class="flex-1 font-medium text-left">{{ opt.label }}</span>
+        <span class="flex-1 font-medium text-left text-[18px]">{{ opt.label }}</span>
         <span
           class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300"
           :class="selected === opt.id ? 'bg-brand-teal border-brand-teal' : 'border-slate-300'"

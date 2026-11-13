@@ -9,12 +9,12 @@
       ¿Cómo están tus ojos hoy?
     </h1>
 
-    <p class="text-lg text-slate-500 mb-2 max-w-md">
+    <p class="text-[24px] text-slate-500 mb-4 max-w-md leading-relaxed">
       Responde 4 preguntas rápidas y descubre si necesitas una revisión visual profesional.
     </p>
 
-    <div class="flex items-center gap-2 text-brand-teal font-semibold mb-10">
-      <span>⏱️</span>
+    <div class="flex items-center gap-2 text-brand-teal font-semibold mb-10 text-[24px]">
+      <span class="text-3xl">⏱️</span>
       <span>Solo 2 minutos</span>
     </div>
 

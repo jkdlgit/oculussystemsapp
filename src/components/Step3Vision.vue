@@ -2,10 +2,9 @@
   <div>
     <!-- Subpaso 1: Vision de lejos -->
     <div v-if="subStep === 1" class="animate-fade-in">
-      <h2 class="text-2xl font-bold text-brand-dark mb-2">¿Te cuesta ver de lejos?</h2>
-      <p class="text-slate-500 mb-6">Ejemplo: letreros en la calle, pizarrón, números de bus, televisor</p>
+      <h2 class="text-2xl font-bold text-brand-dark mb-6">¿Te cuesta ver de lejos?</h2>
 
-      <div class="space-y-3 mb-8">
+      <div class="space-y-3 mb-4">
         <button
           v-for="opt in opcionesLejos"
           :key="opt.value"
@@ -17,8 +16,8 @@
         >
           <span class="text-2xl flex-shrink-0">{{ opt.icon }}</span>
           <div class="text-left">
-            <span class="font-semibold block">{{ opt.label }}</span>
-            <p class="text-sm text-slate-400 leading-tight">{{ opt.desc }}</p>
+            <span class="font-semibold block text-[18px]">{{ opt.label }}</span>
+            <p class="text-slate-400 leading-tight text-[15px] mt-0.5">{{ opt.desc }}</p>
           </div>
         </button>
       </div>
@@ -28,10 +27,9 @@
 
     <!-- Subpaso 2: Vision de cerca -->
     <div v-else-if="subStep === 2" class="animate-fade-in">
-      <h2 class="text-2xl font-bold text-brand-dark mb-2">¿Te cuesta ver de cerca?</h2>
-      <p class="text-slate-500 mb-6">Ejemplo: leer un libro, revisar el celular, ver el menú de un restaurante</p>
+      <h2 class="text-2xl font-bold text-brand-dark mb-6">¿Te cuesta ver de cerca?</h2>
 
-      <div class="space-y-3 mb-8">
+      <div class="space-y-3 mb-4">
         <button
           v-for="opt in opcionesCerca"
           :key="opt.value"
@@ -43,20 +41,11 @@
         >
           <span class="text-2xl flex-shrink-0">{{ opt.icon }}</span>
           <div class="text-left">
-            <span class="font-semibold block">{{ opt.label }}</span>
-            <p class="text-sm text-slate-400 leading-tight">{{ opt.desc }}</p>
+            <span class="font-semibold block text-[18px]">{{ opt.label }}</span>
+            <p class="text-slate-400 leading-tight text-[15px] mt-0.5">{{ opt.desc }}</p>
           </div>
         </button>
       </div>
-
-      <!-- Solo botón Volver; el Continuar es automático -->
-      <button
-        type="button"
-        @click="subStep = 1; advancing = false"
-        class="w-full py-4 border-2 border-slate-200 text-brand-dark font-semibold text-base rounded-2xl hover:bg-slate-50 transition-all duration-300 ease-out flex items-center justify-center"
-      >
-        ← Volver
-      </button>
     </div>
   </div>
 </template>

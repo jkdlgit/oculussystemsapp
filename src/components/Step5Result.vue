@@ -49,7 +49,7 @@
       <h2 class="text-2xl font-bold text-brand-dark mb-4">¡Listo! Este es tu resultado</h2>
 
       <div class="bg-white border-2 border-slate-100 rounded-2xl p-6 mb-8 text-left max-w-md shadow-sm">
-        <p class="text-brand-dark leading-relaxed">{{ resultMessage }}</p>
+        <p class="text-brand-dark leading-relaxed text-[20px]">{{ resultMessage }}</p>
       </div>
 
       <button

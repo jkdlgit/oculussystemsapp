@@ -1,12 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-brand-dark mb-2">¿Tienes problemas para distinguir ciertos colores?</h2>
-    <p class="text-slate-500 mb-2">Ejemplos:</p>
-    <ul class="text-slate-500 mb-8 space-y-1 text-sm">
-      <li>• ¿Confundes el rojo con el verde? (ej. semáforos, frutas, luces)</li>
-      <li>• ¿Te cuesta diferenciar el azul del amarillo?</li>
-      <li>• ¿Alguien te ha dicho que ves los colores de forma diferente?</li>
-    </ul>
+    <h2 class="text-2xl font-bold text-brand-dark mb-6">¿Tienes problemas para distinguir ciertos colores?</h2>
 
     <div class="space-y-3 mb-6">
       <button
@@ -17,7 +11,7 @@
         :disabled="advancing"
       >
         <span class="text-2xl">🔴</span>
-        <span class="font-semibold">Sí, tengo problemas con algunos colores</span>
+        <span class="font-semibold text-[18px]">Sí, tengo problemas con algunos colores</span>
       </button>
       <button
         type="button"
@@ -27,23 +21,7 @@
         :disabled="advancing"
       >
         <span class="text-2xl">🟢</span>
-        <span class="font-semibold">No, veo todos los colores bien</span>
-      </button>
-    </div>
-
-    <!-- Detalle condicional (solo cuando seleccionó "sí") -->
-    <div v-if="localProblema === 'si'" class="mb-6 animate-fade-in">
-      <label class="block text-sm font-semibold text-brand-dark mb-2">Cuéntanos más (opcional)</label>
-      <textarea
-        v-model="localDetalle"
-        class="input-field resize-none"
-        rows="3"
-        placeholder="Ej. Confundo el rojo con el verde"
-      ></textarea>
-      <p class="text-xs text-slate-400 mt-2">No te preocupes, es más común de lo que crees y tiene solución.</p>
-
-      <button @click="handleNext" class="btn-primary mt-4">
-        Ver mi resultado →
+        <span class="font-semibold text-[18px]">No, veo todos los colores bien</span>
       </button>
     </div>
   </div>
@@ -62,22 +40,13 @@ const emit = defineEmits<{
 }>()
 
 const localProblema = ref(props.problemasColores)
-const localDetalle = ref(props.detalleColores)
 const advancing = ref(false)
 
 function selectProblema(value: string) {
   if (advancing.value) return
   localProblema.value = value
-
-  if (value === 'no') {
-    advancing.value = true
-    emit('next', { problema: localProblema.value, detalle: '' })
-  }
-  // "si" → muestra textarea + botón "Ver mi resultado"
-}
-
-function handleNext() {
-  emit('next', { problema: localProblema.value, detalle: localDetalle.value })
+  advancing.value = true
+  emit('next', { problema: value, detalle: '' })
 }
 </script>
 
