@@ -70,11 +70,8 @@ function selectProblema(value: string) {
   localProblema.value = value
 
   if (value === 'no') {
-    // "No" → avanza solo después de un breve delay visual
     advancing.value = true
-    setTimeout(() => {
-      emit('next', { problema: localProblema.value, detalle: '' })
-    }, 600)
+    emit('next', { problema: localProblema.value, detalle: '' })
   }
   // "si" → muestra textarea + botón "Ver mi resultado"
 }

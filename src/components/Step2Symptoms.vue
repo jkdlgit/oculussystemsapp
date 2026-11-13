@@ -39,10 +39,8 @@ const advancing = ref(false)
 
 function selectOption(id: string) {
   if (advancing.value) return
-  selected.value = id
   advancing.value = true
-  setTimeout(() => {
-    emit('next', [id])
-  }, 600)
+  selected.value = id
+  emit('next', [id])
 }
 </script>

@@ -95,19 +95,15 @@ function selectLejos(value: string) {
   if (advancing.value) return
   localLejos.value = value as VisionLevel
   advancing.value = true
-  setTimeout(() => {
-    subStep.value = 2
-    advancing.value = false
-  }, 600)
+  subStep.value = 2
+  advancing.value = false
 }
 
 function selectCerca(value: string) {
   if (advancing.value) return
   localCerca.value = value as VisionLevel
   advancing.value = true
-  setTimeout(() => {
-    emit('next', { lejos: localLejos.value, cerca: localCerca.value })
-  }, 600)
+  emit('next', { lejos: localLejos.value, cerca: localCerca.value })
 }
 </script>
 
