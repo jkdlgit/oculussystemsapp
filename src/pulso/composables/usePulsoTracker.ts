@@ -182,6 +182,7 @@ export function usePulsoTracker(options: UsePulsoTrackerOptions) {
             quiz: quizKey.value,
             client: clientSlug.value,
             client_id: clientSlug.value,
+            city: typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('city') || new URLSearchParams(window.location.search).get('ciudad') || 'Guayaquil') : 'Guayaquil',
             dispositivo: typeof navigator !== 'undefined' && /Mobile|Android|iP(hone|od)/.test(navigator.userAgent) ? 'móvil' : 'desktop'
           }
         }
