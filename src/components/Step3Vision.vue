@@ -12,7 +12,8 @@
           type="button"
           class="option-card flex items-center gap-4"
           :class="{ selected: localLejos === opt.value }"
-          @click="localLejos = opt.value"
+          @click="selectLejos(opt.value)"
+          :disabled="advancing"
         >
           <span class="text-2xl flex-shrink-0">{{ opt.icon }}</span>
           <div class="text-left">
@@ -22,9 +23,7 @@
         </button>
       </div>
 
-      <button @click="goToSubStep2" class="btn-primary" :disabled="!localLejos">
-        Continuar →
-      </button>
+      <!-- Botón oculto: avance automático al seleccionar -->
     </div>
 
     <!-- Subpaso 2: Vision de cerca -->
@@ -39,7 +38,8 @@
           type="button"
           class="option-card flex items-center gap-4"
           :class="{ selected: localCerca === opt.value }"
-          @click="localCerca = opt.value"
+          @click="selectCerca(opt.value)"
+          :disabled="advancing"
         >
           <span class="text-2xl flex-shrink-0">{{ opt.icon }}</span>
           <div class="text-left">
@@ -49,18 +49,14 @@
         </button>
       </div>
 
-      <div class="flex gap-3">
-        <button
-          type="button"
-          @click="subStep = 1"
-          class="w-1/3 py-4 border-2 border-slate-200 text-brand-dark font-semibold text-base rounded-2xl hover:bg-slate-50 transition-all duration-300 ease-out flex items-center justify-center"
-        >
-          ← Volver
-        </button>
-        <button @click="handleNext" class="btn-primary flex-1" :disabled="!localCerca">
-          Continuar →
-        </button>
-      </div>
+      <!-- Solo botón Volver; el Continuar es automático -->
+      <button
+        type="button"
+        @click="subStep = 1; advancing = false"
+        class="w-full py-4 border-2 border-slate-200 text-brand-dark font-semibold text-base rounded-2xl hover:bg-slate-50 transition-all duration-300 ease-out flex items-center justify-center"
+      >
+        ← Volver
+      </button>
     </div>
   </div>
 </template>
@@ -81,6 +77,7 @@ const emit = defineEmits<{
 const localLejos = ref<VisionLevel>((props.visionLejos as VisionLevel) || '')
 const localCerca = ref<VisionLevel>((props.visionCerca as VisionLevel) || '')
 const subStep = ref(1)
+const advancing = ref(false)
 
 const opcionesLejos = [
   { value: 'mucho', label: 'Mucho', desc: 'Me cuesta bastante ver objetos lejanos', icon: '🔵' },
@@ -94,16 +91,23 @@ const opcionesCerca = [
   { value: 'nada', label: 'Nada', desc: 'Veo perfectamente de cerca', icon: '⚪' },
 ] as const
 
-function goToSubStep2() {
-  if (localLejos.value) {
+function selectLejos(value: string) {
+  if (advancing.value) return
+  localLejos.value = value as VisionLevel
+  advancing.value = true
+  setTimeout(() => {
     subStep.value = 2
-  }
+    advancing.value = false
+  }, 600)
 }
 
-function handleNext() {
-  if (localLejos.value && localCerca.value) {
+function selectCerca(value: string) {
+  if (advancing.value) return
+  localCerca.value = value as VisionLevel
+  advancing.value = true
+  setTimeout(() => {
     emit('next', { lejos: localLejos.value, cerca: localCerca.value })
-  }
+  }, 600)
 }
 </script>
 

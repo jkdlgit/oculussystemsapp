@@ -11,6 +11,7 @@
         class="symptom-chip w-full"
         :class="{ selected: isSelected(opt.id) }"
         @click="toggle(opt.id)"
+        :disabled="advancing"
       >
         <span class="text-2xl flex-shrink-0">{{ opt.emoji }}</span>
         <span class="flex-1 font-medium">{{ opt.label }}</span>
@@ -25,9 +26,7 @@
       </button>
     </div>
 
-    <button @click="handleNext" class="btn-primary" :disabled="selected.length === 0">
-      Continuar →
-    </button>
+    <!-- Botón oculto: avance automático al seleccionar -->
   </div>
 </template>
 
@@ -44,17 +43,23 @@ const emit = defineEmits<{
 }>()
 
 const selected = ref<string[]>([...props.sintomas])
+const advancing = ref(false)
 
 function isSelected(id: string): boolean {
   return selected.value.includes(id)
 }
 
 function toggle(id: string) {
+  if (advancing.value) return
+
   if (id === 'ninguna') {
-    selected.value = isSelected('ninguna') ? [] : ['ninguna']
+    // "Ninguna" es selección única → avanza inmediatamente
+    selected.value = ['ninguna']
+    scheduleAdvance()
     return
   }
-  // Remove 'ninguna' if selecting a symptom
+
+  // Quitar 'ninguna' si selecciona un síntoma
   selected.value = selected.value.filter(s => s !== 'ninguna')
 
   const idx = selected.value.indexOf(id)
@@ -63,9 +68,22 @@ function toggle(id: string) {
   } else {
     selected.value.push(id)
   }
+
+  // Con síntomas múltiples: avanza 700ms después de la última selección
+  if (selected.value.length > 0) {
+    scheduleAdvance()
+  }
 }
 
-function handleNext() {
-  emit('next', [...selected.value])
+let advanceTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleAdvance() {
+  if (advanceTimer) clearTimeout(advanceTimer)
+  advanceTimer = setTimeout(() => {
+    if (selected.value.length > 0) {
+      advancing.value = true
+      emit('next', [...selected.value])
+    }
+  }, 700)
 }
 </script>

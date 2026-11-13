@@ -13,7 +13,8 @@
         type="button"
         class="option-card flex items-center gap-4"
         :class="{ selected: localProblema === 'si' }"
-        @click="localProblema = 'si'"
+        @click="selectProblema('si')"
+        :disabled="advancing"
       >
         <span class="text-2xl">🔴</span>
         <span class="font-semibold">Sí, tengo problemas con algunos colores</span>
@@ -22,14 +23,15 @@
         type="button"
         class="option-card flex items-center gap-4"
         :class="{ selected: localProblema === 'no' }"
-        @click="localProblema = 'no'"
+        @click="selectProblema('no')"
+        :disabled="advancing"
       >
         <span class="text-2xl">🟢</span>
         <span class="font-semibold">No, veo todos los colores bien</span>
       </button>
     </div>
 
-    <!-- Detalle condicional -->
+    <!-- Detalle condicional (solo cuando seleccionó "sí") -->
     <div v-if="localProblema === 'si'" class="mb-6 animate-fade-in">
       <label class="block text-sm font-semibold text-brand-dark mb-2">Cuéntanos más (opcional)</label>
       <textarea
@@ -39,11 +41,11 @@
         placeholder="Ej. Confundo el rojo con el verde"
       ></textarea>
       <p class="text-xs text-slate-400 mt-2">No te preocupes, es más común de lo que crees y tiene solución.</p>
-    </div>
 
-    <button @click="handleNext" class="btn-primary" :disabled="!localProblema">
-      Ver mi resultado →
-    </button>
+      <button @click="handleNext" class="btn-primary mt-4">
+        Ver mi resultado →
+      </button>
+    </div>
   </div>
 </template>
 
@@ -61,6 +63,21 @@ const emit = defineEmits<{
 
 const localProblema = ref(props.problemasColores)
 const localDetalle = ref(props.detalleColores)
+const advancing = ref(false)
+
+function selectProblema(value: string) {
+  if (advancing.value) return
+  localProblema.value = value
+
+  if (value === 'no') {
+    // "No" → avanza solo después de un breve delay visual
+    advancing.value = true
+    setTimeout(() => {
+      emit('next', { problema: localProblema.value, detalle: '' })
+    }, 600)
+  }
+  // "si" → muestra textarea + botón "Ver mi resultado"
+}
 
 function handleNext() {
   emit('next', { problema: localProblema.value, detalle: localDetalle.value })
