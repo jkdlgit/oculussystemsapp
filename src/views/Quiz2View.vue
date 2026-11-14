@@ -9,8 +9,7 @@
     <main class="w-full max-w-lg">
       <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-8 md:p-10 border border-slate-100 overflow-hidden">
         <Transition name="fade" mode="out-in">
-          <VCWelcome v-if="step === 0" @start="handleStart" :key="0" />
-          <VCPrueba v-else-if="step === 1" @finish="handleTestFinish" :key="1" />
+          <VCPrueba v-if="step === 1" @finish="handleTestFinish" :key="1" />
           <VCResultado v-else-if="step === 2" :score="acuityScore" @next="handleGoToFinal" :key="2" />
           <!-- VCFormulario eliminado del flujo para reducir fricción: se va directo a VCFinal -->
           <VCFinal v-else-if="step === 4" @whatsapp="handleWhatsAppClick" :key="4" />
@@ -58,7 +57,7 @@ declare global {
 }
 
 const route = useRoute()
-const step = ref(0)
+const step = ref(1)
 const leadId = ref<number | null>(null)
 const acuityScore = ref<string>('')
 const owner = ref<string>('publicidad')
@@ -103,6 +102,19 @@ onMounted(async () => {
   // Sincronizar leadId con usePulsoTracker
   if (tracker.leadId.value) {
     leadId.value = tracker.leadId.value
+  }
+
+  // ⚡ Entrada Directa a Prueba 1: Iniciar VisiónCheck sin pantalla de bienvenida
+  window.pulso?.step(1, { action: 'iniciar_prueba_visioncheck' })
+  tracker.trackStep(1, { action: 'iniciar_prueba_visioncheck' })
+
+  if (hasSupabaseConfig && leadId.value) {
+    try {
+      await supabase.from('leads').update({
+        estado: 'Paso 1',
+        respuestas: { etapa: 'prueba_iniciada', paso: 1, test: 'visioncheck1', client_id: 'opticajohanna', quiz: 'quiz2' }
+      }).eq('id', leadId.value)
+    } catch (e) {}
   }
 })
 

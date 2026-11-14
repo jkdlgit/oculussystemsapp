@@ -15,20 +15,8 @@
 
         <!-- Steps -->
         <Transition name="fade" mode="out-in">
-          <Step0Welcome v-if="step === 0" @next="step = 2" :key="0" />
-
-          <!-- Formulario de captación de datos oculto temporalmente para reducir fricción de entrada -->
-          <Step1PersonalData
-            v-if="false"
-            :nombre="quiz.nombre"
-            :telefono="quiz.telefono"
-            :edad="quiz.edad"
-            @next="handleStep1"
-            :key="1"
-          />
-
           <Step2Symptoms
-            v-else-if="step === 2"
+            v-if="step === 2"
             :sintomas="quiz.sintomas"
             @next="handleStep2"
             :key="2"
@@ -102,7 +90,7 @@ declare global {
   }
 }
 
-const step = ref(0)
+const step = ref(2)
 
 const quiz = reactive<QuizData>({
   nombre: '',
@@ -154,6 +142,10 @@ onMounted(async () => {
       window.pulso?.visit()
     }
   }
+
+  // ⚡ Entrada Directa a Pregunta 1 (Paso 1 de síntomas): Registrar inicio de quiz sin pantalla de bienvenida
+  window.pulso?.step(1, { action: 'entrada_directa_sintomas' })
+  tracker.trackStep(1, { action: 'entrada_directa_sintomas' })
 })
 
 function handleStart() {
@@ -290,6 +282,6 @@ function handleRestart() {
   quiz.visionCerca = ''
   quiz.problemasColores = ''
   quiz.detalleColores = ''
-  step.value = 0
+  step.value = 2
 }
 </script>
