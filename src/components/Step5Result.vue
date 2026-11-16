@@ -38,77 +38,73 @@
       </button>
     </div>
 
-    <!-- Result state (CRO Optimizado) -->
+    <!-- Result state (CRO Optimizado — Senior Friendly) -->
     <div v-else class="flex flex-col items-center">
-      <!-- Icono y Titular de Valor -->
-      <div class="w-16 h-16 bg-brand-teal/10 rounded-full flex items-center justify-center mb-4">
+
+      <!-- Encabezado directo y claro -->
+      <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-5">
         <span class="text-3xl">🩺</span>
       </div>
 
-      <h2 class="text-xl sm:text-2xl font-black text-brand-dark mb-3 leading-snug max-w-md">
-        Tu resultado califica para 1 Examen Computarizado con Optómetra (Sin Costo) en Matriz Guayaquil
+      <h2 class="text-[26px] sm:text-3xl font-black text-slate-900 mb-3 leading-tight max-w-md">
+        Hemos analizado tu agudeza visual.
       </h2>
 
-      <!-- Reversión Total de Riesgo -->
-      <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-2xl text-xs mb-4 text-left flex items-start gap-2.5 max-w-md w-full">
-        <span class="text-base flex-shrink-0">🔒</span>
-        <span class="leading-relaxed"><strong>Sin compromiso de compra.</strong> No te llamaremos por teléfono; coordinas tu cupo <strong>100% por chat</strong> sin costo ni formularios adicionales.</span>
-      </div>
+      <!-- Cuerpo informativo — 18px, interlineado 1.5 -->
+      <p class="text-[18px] leading-[1.6] text-slate-700 mb-5 max-w-md text-left">
+        Tu puntaje indica que tus ojos necesitan una revisión presencial para evitar fatiga o pérdida de enfoque.<br><br>
+        <strong class="text-slate-900">Da clic abajo</strong> para enviar automáticamente tu test a nuestro especialista en Guayaquil y elegir tu hora.
+      </p>
 
-      <!-- Diagnóstico Preliminar -->
-      <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-5 text-left max-w-md w-full shadow-sm">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Diagnóstico preliminar:</span>
-        <p class="text-slate-800 leading-relaxed text-sm font-medium">{{ resultMessage }}</p>
-      </div>
-
-      <!-- Micro-selector táctil de 2 horarios de 1 toque -->
-      <div class="w-full max-w-md mb-5 text-left">
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Elige tu turno preferido:</label>
+      <!-- Selector de turno — táctil, grande, fácil de tocar -->
+      <div class="w-full max-w-md mb-6 text-left">
+        <p class="text-base font-bold text-slate-700 mb-3">Elige cuándo quieres venir:</p>
         <div class="grid grid-cols-2 gap-3">
           <button
             type="button"
             @click="selectedTurno = 'manana'"
             :class="selectedTurno === 'manana'
-              ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-400 font-bold shadow-sm'
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-400 font-bold shadow-md'
               : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300'"
-            class="p-3.5 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
+            class="p-4 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 min-h-[80px]"
           >
-            <span class="text-2xl leading-none">🌅</span>
-            <span class="text-xs font-bold">Turno Mañana</span>
-            <span class="text-[11px] text-slate-500">10:30 a 12:30</span>
+            <span class="text-3xl leading-none">🌅</span>
+            <span class="text-base font-bold">Mañana</span>
+            <span class="text-sm text-slate-500 font-medium">10:30 a 12:30</span>
           </button>
           <button
             type="button"
             @click="selectedTurno = 'tarde'"
             :class="selectedTurno === 'tarde'
-              ? 'bg-violet-50 border-violet-500 text-violet-950 ring-2 ring-violet-400 font-bold shadow-sm'
+              ? 'bg-violet-50 border-violet-500 text-violet-950 ring-2 ring-violet-400 font-bold shadow-md'
               : 'bg-white border-slate-200 text-slate-600 hover:border-violet-300'"
-            class="p-3.5 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
+            class="p-4 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 min-h-[80px]"
           >
-            <span class="text-2xl leading-none">🌙</span>
-            <span class="text-xs font-bold">Turno Tarde</span>
-            <span class="text-[11px] text-slate-500">15:30 a 18:00</span>
+            <span class="text-3xl leading-none">🌙</span>
+            <span class="text-base font-bold">Tarde</span>
+            <span class="text-sm text-slate-500 font-medium">15:30 a 18:00</span>
           </button>
         </div>
       </div>
 
-      <!-- Botón Cierre WhatsApp -->
+      <!-- CTA Principal — botón masivo, 56px+ de altura, ancho completo -->
       <button
         @click="handleBook"
-        class="btn-primary w-full max-w-md flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] border-none text-white py-4 rounded-xl text-base font-bold shadow-lg shadow-[#25D366]/30 transition-all cursor-pointer active:scale-[0.98]"
+        class="w-full max-w-md flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1ebd5a] active:scale-[0.98] text-white min-h-[56px] rounded-2xl text-[18px] font-black shadow-xl shadow-[#25D366]/40 transition-all cursor-pointer border-none"
         :disabled="submitting"
       >
         <span v-if="submitting" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
         <template v-else>
-          <span class="text-xl">💬</span> Apartar mi Turno por WhatsApp
+          <span class="text-2xl">💬</span> Enviar mi resultado y apartar mi cita
         </template>
       </button>
 
-      <p v-if="submitError" class="text-red-500 text-xs mt-3 max-w-sm">{{ submitError }}</p>
-
-      <p class="mt-5 text-[11px] text-slate-400 max-w-sm">
-        Este test es orientativo y no reemplaza un examen profesional completo con optómetra.
+      <!-- Micro-texto de confianza — inmediatamente debajo del botón -->
+      <p class="mt-3 text-sm text-slate-500 leading-relaxed max-w-md text-center">
+        🔒 Tu resultado es confidencial. Escríbenos y te asignamos horario inmediato en nuestra óptica en Guayaquil, sin filas de espera.
       </p>
+
+      <p v-if="submitError" class="text-red-500 text-sm mt-3 max-w-sm">{{ submitError }}</p>
     </div>
 
     <!-- Exit Intent Modal (Salva-fugas) -->
@@ -167,8 +163,8 @@ const selectedTurno = ref<'manana' | 'tarde'>('manana')
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 
 const whatsappLink = computed(() => {
-  const turnoTexto = selectedTurno.value === 'manana' ? 'de la mañana (10:30)' : 'de la tarde (15:30)'
-  const msg = `¡Hola Madeline! 👋 Acabo de terminar el chequeo visual en la web y aparté el turno ${turnoTexto} para mi examen computarizado gratuito en Matriz Guayaquil. ¿Me confirmas la dirección exacta?`
+  const turnoTexto = selectedTurno.value === 'manana' ? 'de la mañana (10:30 a 12:30)' : 'de la tarde (15:30 a 18:00)'
+  const msg = `Hola, acabo de terminar mi Quiz 1 en la web de Óptica Johanna. Mi resultado muestra que necesito revisión visual y quiero apartar una cita ${turnoTexto}.`
   return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(msg)}`
 })
 
