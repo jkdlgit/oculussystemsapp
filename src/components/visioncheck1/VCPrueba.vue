@@ -1,265 +1,230 @@
 <template>
   <div class="flex flex-col h-full">
-    <!-- Indicador de Progreso y Gamificación -->
+    <!-- Indicador de Progreso -->
     <div class="mb-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-slate-500 font-bold text-sm tracking-wide">Progreso: {{ currentRound }}/{{ maxRounds }}</span>
-        <div class="flex items-center gap-2">
-          <Transition name="pop">
-            <span v-if="streak >= 2" class="text-orange-500 font-bold text-sm bg-orange-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-              🔥 Racha x{{ streak }}
-            </span>
-          </Transition>
-          <span class="text-indigo-600 font-black text-sm bg-indigo-50 px-2 py-0.5 rounded-full">
-            ⭐ {{ puntuacion }} pts
-          </span>
-        </div>
+        <span class="text-slate-500 font-bold text-sm tracking-wide">Ronda {{ currentRound }} de {{ maxRounds }}</span>
+        <span class="text-indigo-600 font-black text-xs bg-indigo-50 px-2 py-0.5 rounded-full">
+          Test de Agudeza Visual
+        </span>
       </div>
-      
-      <!-- Barra de Progreso Visual con Iconos -->
-      <div class="flex gap-1 h-2">
-        <div 
+
+      <!-- Barra de Progreso -->
+      <div class="flex gap-2 h-2">
+        <div
           v-for="i in maxRounds" :key="i"
           :class="[
-            'flex-1 rounded-full transition-colors duration-300 relative',
-            i < currentRound ? (roundResults[i-1] ? 'bg-emerald-500' : 'bg-red-400') : (i === currentRound ? 'bg-blue-400 animate-pulse' : 'bg-slate-200')
+            'flex-1 rounded-full transition-colors duration-300',
+            i < currentRound ? 'bg-emerald-500' : (i === currentRound ? 'bg-blue-400 animate-pulse' : 'bg-slate-200')
           ]"
-        >
-        </div>
+        ></div>
       </div>
-      
-      <p class="text-center text-xs text-slate-400 font-medium mt-2 h-4 transition-all duration-300">
-        <span v-if="feedback === 'success'" class="text-emerald-600 font-bold">¡Excelente! Sigue así.</span>
-        <span v-else-if="feedback === 'error'" class="text-red-500 font-bold">No te preocupes, intentemos con otra.</span>
-        <span v-else-if="streak >= 3" class="text-orange-500 font-bold">¡Vas invicto, visión de águila! 🦅</span>
-        <span v-else>¿Puedes identificar la letra?</span>
+
+      <p class="text-center text-xs text-slate-400 font-medium mt-2 h-4">
+        <span v-if="currentRound === 1">¿Puedes leer las letras con claridad?</span>
+        <span v-else class="text-slate-500 font-semibold">Ronda final — letras más pequeñas</span>
       </p>
     </div>
 
-    <!-- Área de Visualización de Letra -->
-    <div class="flex-1 flex flex-col items-center justify-center min-h-[180px] bg-white rounded-2xl border-2 border-slate-200 mb-6 relative overflow-hidden shadow-sm">
-      
-      <!-- Feedback Overlay -->
-      <Transition name="fade-fast">
-        <div v-if="feedback" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-          <span v-if="feedback === 'success'" class="text-7xl drop-shadow-md">✅</span>
-          <span v-if="feedback === 'error'" class="text-7xl drop-shadow-md">❌</span>
+    <!-- Área de visualización de letras (fondo negro, estilo optometría) -->
+    <div class="flex-1 flex flex-col items-center justify-center min-h-[200px] bg-black rounded-2xl mb-6 shadow-inner relative overflow-hidden">
+      <!-- Instrucción sutil -->
+      <span class="absolute top-3 text-slate-600 text-[10px] font-mono uppercase tracking-widest">Optotipo Snellen</span>
+
+      <!-- Letras de la ronda actual -->
+      <Transition name="pop" mode="out-in">
+        <div
+          :key="currentRound"
+          class="font-mono font-black tracking-[0.3em] text-white text-center select-none"
+          :style="{ fontSize: currentFontSize }"
+        >
+          {{ currentLetters }}
         </div>
       </Transition>
 
-      <div 
-        :class="[
-          'font-mono font-black leading-none select-none transition-all duration-300 flex items-center justify-center',
-          feedback === 'success' ? 'text-emerald-600' : (feedback === 'error' ? 'text-red-500' : 'text-black')
-        ]"
-        :style="{ fontSize: `${currentSize}px`, height: '100px' }"
-      >
-        <Transition name="pop" mode="out-in">
-          <span :key="currentLetter + currentRound">{{ currentLetter }}</span>
-        </Transition>
-      </div>
+      <!-- Indicador de distancia recomendada -->
+      <span class="absolute bottom-3 text-slate-600 text-[10px] font-mono">Mantén el dispositivo a ~40cm</span>
     </div>
 
-    <!-- Control de Tamaño (Slider Manual) -->
-    <div class="mb-6 px-2 bg-slate-50 p-4 rounded-xl border border-slate-100 relative group">
-      <!-- Pulso animado detrás del slider para llamar la atención -->
-      <div v-if="showSliderPulse" class="absolute inset-0 border-2 border-blue-400 rounded-xl animate-ping opacity-20 pointer-events-none"></div>
-      
-      <div class="flex justify-between text-xs text-slate-500 font-bold mb-3 uppercase tracking-wider">
-        <span class="flex items-center gap-1"><span class="text-lg leading-none">A</span> Grande</span>
-        <span class="flex items-center gap-1">Pequeña <span class="text-xs leading-none">A</span></span>
-      </div>
-      
-      <input 
-        type="range" 
-        min="1" 
-        max="10" 
-        v-model.number="currentStep"
-        @input="onManualSliderMove"
-        class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      />
-      <p class="text-center text-[10px] text-slate-400 mt-2">Puedes ajustar el tamaño manualmente</p>
-    </div>
-
-    <!-- Controles (Botones Grandes) -->
+    <!-- Botones Rojo / Verde -->
     <div class="grid grid-cols-2 gap-4 mt-auto">
       <button
-        @click="handleAnswer(false)"
+        @click="handleRed"
         :disabled="isProcessing"
-        class="bg-red-50 hover:bg-red-100 text-red-700 font-bold py-5 px-4 rounded-xl transition-all active:scale-95 border-2 border-red-200 flex flex-col items-center justify-center gap-2 disabled:opacity-50"
+        class="bg-red-50 hover:bg-red-100 text-red-700 font-bold py-5 px-4 rounded-xl transition-all active:scale-95 border-2 border-red-200 flex flex-col items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
       >
         <span class="text-3xl leading-none">👎</span>
         <span class="text-sm uppercase tracking-wide">No veo bien</span>
       </button>
       <button
-        @click="handleAnswer(true)"
+        @click="handleGreen"
         :disabled="isProcessing"
-        class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 px-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-600/30 flex flex-col items-center justify-center gap-2 disabled:opacity-50"
+        class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 px-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-600/30 flex flex-col items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
       >
         <span class="text-3xl leading-none">👍</span>
-        <span class="text-sm uppercase tracking-wide">Sí, la veo clara</span>
+        <span class="text-sm uppercase tracking-wide">Sí, las veo</span>
       </button>
     </div>
+
+    <!-- Modal Oferta Roja (cuando presiona "No veo bien") -->
+    <Teleport to="body">
+      <div v-if="showRedModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="max-w-sm w-full bg-white rounded-3xl p-6 shadow-2xl border border-rose-200 text-center">
+          <span class="text-5xl block mb-3">👁️</span>
+          <h3 class="text-lg font-extrabold text-slate-800 leading-tight mb-3">
+            Tu visión podría estar afectando tu calidad de vida
+          </h3>
+          <p class="text-sm text-slate-600 leading-relaxed mb-4">
+            Detectamos una dificultad para distinguir esta escala. <strong>Una corrección óptica adecuada</strong> puede devolverte el 100% de nitidez — sin costo y sin compromiso.
+          </p>
+
+          <!-- Beneficios -->
+          <div class="bg-rose-50 border border-rose-100 rounded-2xl p-3 text-left space-y-1.5 text-xs text-slate-700 mb-4">
+            <p>🎯 <strong>Examen Computarizado Sin Costo</strong> en Óptica Johanna, Matriz Guayaquil</p>
+            <p>💬 <strong>Coordinas 100% por WhatsApp</strong> — sin llamadas, sin presión</p>
+            <p>⏱️ <strong>Dura menos de 20 minutos</strong> y es completamente gratuito</p>
+            <p>📍 <strong>Visita cuando puedas</strong> — sin citas urgentes</p>
+          </div>
+
+          <p class="text-[11px] text-slate-400 italic mb-4">
+            Planifica tu visita a tu ritmo — no te va a costar nada y podrás ir cuando gustes
+          </p>
+
+          <!-- Reversión de riesgo -->
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-xs text-emerald-800 mb-4 flex items-center gap-2">
+            <span>🔒</span>
+            <span>Sin compromiso de compra. No te llamaremos por teléfono.</span>
+          </div>
+
+          <!-- Selector de turnos -->
+          <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Elige tu horario de examen:</label>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <button
+              @click="bookFromRedOffer('manana')"
+              class="p-3 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-slate-800 text-xs font-bold text-center hover:bg-emerald-100 transition-all active:scale-95 cursor-pointer flex flex-col items-center gap-1"
+            >
+              <span class="text-xl">🌅</span>
+              <span class="font-black">Mañana</span>
+              <span class="text-slate-500 font-normal text-[11px]">10:30 – 12:30</span>
+            </button>
+            <button
+              @click="bookFromRedOffer('tarde')"
+              class="p-3 rounded-xl border-2 border-violet-400 bg-violet-50 text-slate-800 text-xs font-bold text-center hover:bg-violet-100 transition-all active:scale-95 cursor-pointer flex flex-col items-center gap-1"
+            >
+              <span class="text-xl">🌙</span>
+              <span class="font-black">Tarde</span>
+              <span class="text-slate-500 font-normal text-[11px]">15:30 – 18:00</span>
+            </button>
+          </div>
+
+          <button
+            @click="continueTest"
+            class="w-full py-2 text-xs text-slate-500 hover:text-slate-700 transition-colors cursor-pointer underline"
+          >
+            Continuar el test de todas formas
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 
-const emit = defineEmits(['finish'])
+const emit = defineEmits<{
+  finish: [score: string, turno?: string]
+}>()
 
-// Optotipos típicos de Snellen
-const letters = ['C', 'D', 'E', 'F', 'L', 'N', 'O', 'P', 'T', 'Z']
+// === Configuración del test (2 rondas) ===
+const maxRounds = 2
 
-// Escala de pasos: { step: number, px: number, score: string }
-const scale = [
-  { step: 1, px: 96, score: '20/200' },
-  { step: 2, px: 84, score: '20/100' },
-  { step: 3, px: 72, score: '20/80' },
-  { step: 4, px: 60, score: '20/60' },
-  { step: 5, px: 48, score: '20/50' },
-  { step: 6, px: 36, score: '20/40' },
-  { step: 7, px: 28, score: '20/30' },
-  { step: 8, px: 20, score: '20/25' },
-  { step: 9, px: 16, score: '20/20' }, // Visión normal
-  { step: 10, px: 12, score: '20/15' }, // Visión excelente
+// Sets de letras por ronda
+const letterSets = [
+  ['E', 'P', 'T', 'O', 'F', 'Z'], // ronda 1 — letras grandes (16px)
+  ['C', 'D', 'L', 'V', 'N', 'R'], // ronda 2 — letras pequeñas (9.5px)
 ]
 
-const maxSteps = scale.length
-const maxRounds = 10
+// Tamaños de fuente por ronda (drásticamente reducidos, empezando pequeño)
+const fontSizes = ['16px', '9.5px']
 
+// === Estado ===
 const currentRound = ref(1)
-const currentStep = ref(1) // Inicia en la letra más grande
-const currentLetter = ref('')
-
-const streak = ref(0)
-const puntuacion = ref(0)
-const bestStep = ref(0) // Rastrea el nivel más alto (más pequeño) donde acertó
-const roundResults = ref<boolean[]>([]) // true = acierto, false = fallo
-
-const feedback = ref<'success' | 'error' | null>(null)
 const isProcessing = ref(false)
-const showSliderPulse = ref(true)
+const showRedModal = ref(false)
+const roundLetters = ref<string[]>([]) // letras generadas al inicio
 
-const currentSize = computed(() => {
-  const stepObj = scale.find(s => s.step === currentStep.value)
-  return stepObj ? stepObj.px : 96
-})
-
-function getRandomLetter() {
-  let newLetter = currentLetter.value
-  while (newLetter === currentLetter.value) {
-    newLetter = letters[Math.floor(Math.random() * letters.length)]
-  }
-  return newLetter
+// Generar 4 letras aleatorias para la ronda actual
+function generateLetters(round: number): string {
+  const pool = letterSets[round - 1]
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, 4).join('  ')
 }
 
-function nextRound() {
-  currentLetter.value = getRandomLetter()
-}
+// Inicializar letras para ambas rondas
+roundLetters.value = [
+  generateLetters(1),
+  generateLetters(2),
+]
 
-function onManualSliderMove() {
-  // Cuando el usuario interactúa, quitamos la animación de pulso
-  showSliderPulse.value = false
-}
+const currentLetters = computed(() => roundLetters.value[currentRound.value - 1] || '')
+const currentFontSize = computed(() => fontSizes[currentRound.value - 1])
 
-function handleAnswer(canSee: boolean) {
+// === Acciones ===
+
+// Botón verde → continúa a siguiente ronda o finaliza con 20/20
+function handleGreen() {
   if (isProcessing.value) return
   isProcessing.value = true
 
-  // Ocultar pulso si responden sin tocar el slider
-  showSliderPulse.value = false
-
-  // Registrar resultado
-  roundResults.value.push(canSee)
-
-  if (canSee) {
-    feedback.value = 'success'
-    streak.value++
-    puntuacion.value += currentStep.value * 10 * streak.value
-    if (currentStep.value > bestStep.value) {
-      bestStep.value = currentStep.value
-    }
-  } else {
-    feedback.value = 'error'
-    streak.value = 0
-  }
-
-  // Esperar 0.5s para mostrar el feedback visual antes de pasar a la siguiente
   setTimeout(() => {
-    feedback.value = null
-    
     if (currentRound.value >= maxRounds) {
-      // Fin de la prueba
-      concluirPrueba()
+      // Completó ambas rondas viendo bien → 20/20
+      emit('finish', '20/20 — Agudeza Excelente')
     } else {
-      // Ajuste automático del slider para la siguiente ronda
-      if (canSee) {
-        if (currentStep.value < maxSteps) currentStep.value++
-      } else {
-        if (currentStep.value > 1) currentStep.value--
-      }
-      
+      // Avanzar a la siguiente ronda
       currentRound.value++
-      nextRound()
       isProcessing.value = false
     }
-  }, 600) // 600ms para asegurar que la animación se vea bien
+  }, 300)
 }
 
-function concluirPrueba() {
-  // El score se basa en el mejor acierto (bestStep)
-  let finalScore = '> 20/200'
-  if (bestStep.value > 0) {
-    const stepObj = scale.find(s => s.step === bestStep.value)
-    if (stepObj) finalScore = stepObj.score
+// Botón rojo → muestra modal de oferta inmediatamente
+function handleRed() {
+  if (isProcessing.value) return
+  showRedModal.value = true
+}
+
+// Elegir turno desde el modal rojo → ir a resultado + WhatsApp
+function bookFromRedOffer(turno: string) {
+  showRedModal.value = false
+  const score = currentRound.value === 1 ? '20/60 — Dificultad Visual Alta' : '20/40 — Dificultad Visual Moderada'
+  emit('finish', score, turno)
+}
+
+// Continuar test sin agendar (desde el modal rojo)
+function continueTest() {
+  showRedModal.value = false
+  isProcessing.value = false
+  // Si falló ronda 1, igual termina (el usuario dijo que no ve)
+  if (currentRound.value >= maxRounds) {
+    emit('finish', '20/40 — Dificultad Visual Moderada')
+  } else {
+    // Pasa a ronda 2 de todas formas
+    currentRound.value++
   }
-  emit('finish', finalScore)
 }
-
-onMounted(() => {
-  nextRound()
-})
 </script>
 
 <style scoped>
 .pop-enter-active {
-  animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: pop-in 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .pop-leave-active {
   animation: pop-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) reverse;
 }
 @keyframes pop-in {
-  0% { transform: scale(0.8); opacity: 0; }
+  0% { transform: scale(0.85); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
-}
-
-.fade-fast-enter-active,
-.fade-fast-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-fast-enter-from,
-.fade-fast-leave-to {
-  opacity: 0;
-}
-
-/* Estilos personalizados para el range slider en navegadores webkit */
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 24px;
-  width: 24px;
-  border-radius: 50%;
-  background: #2563eb;
-  cursor: pointer;
-  margin-top: -6px; /* Para centrarlo si el track es más delgado */
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
-  border: 2px solid white;
-}
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 12px;
-  cursor: pointer;
-  background: #e2e8f0;
-  border-radius: 8px;
 }
 </style>

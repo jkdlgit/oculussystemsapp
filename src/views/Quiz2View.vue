@@ -10,7 +10,7 @@
       <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-8 md:p-10 border border-slate-100 overflow-hidden">
         <Transition name="fade" mode="out-in">
           <VCPrueba v-if="step === 1" @finish="handleTestFinish" :key="1" />
-          <VCResultado v-else-if="step === 2" :score="acuityScore" @next="handleGoToFinal" :key="2" />
+          <VCResultado v-else-if="step === 2" :score="acuityScore" :initial-turno="selectedTurno" @next="handleGoToFinal" :key="2" />
           <!-- VCFormulario eliminado del flujo para reducir fricción: se va directo a VCFinal -->
           <VCFinal v-else-if="step === 4" @whatsapp="handleWhatsAppClick" :key="4" />
         </Transition>
@@ -60,6 +60,7 @@ const route = useRoute()
 const step = ref(1)
 const leadId = ref<number | null>(null)
 const acuityScore = ref<string>('')
+const selectedTurno = ref<string>('manana')
 const owner = ref<string>('publicidad')
 
 const clientSlug = computed(() => {
@@ -133,9 +134,15 @@ async function handleStart() {
   }
 }
 
-async function handleTestFinish(score: string) {
+async function handleTestFinish(score: string, turno?: string) {
   acuityScore.value = score
-  step.value = 2
+  if (turno) {
+    // Si el usuario presionó rojo y eligió turno desde el modal, ir directo a final con WhatsApp
+    selectedTurno.value = turno
+    step.value = 2
+  } else {
+    step.value = 2
+  }
 
   // Telemetría Pulso: Paso 2 y completado de la prueba
   window.pulso?.step(2, { score })
@@ -165,28 +172,30 @@ function handleGoToForm() {
 }
 
 // Va directo a la pantalla final sin pedir datos: reduce fricción de conversión
-async function handleGoToFinal() {
+async function handleGoToFinal(turno?: string) {
+  if (turno) selectedTurno.value = turno
   step.value = 4
-  window.pulso?.booking({ action: 'reserva_sin_formulario_visioncheck', score: acuityScore.value })
+  window.pulso?.booking({ action: 'reserva_sin_formulario_visioncheck', score: acuityScore.value, turno: selectedTurno.value })
   await tracker.trackBooking({
     nombre: '',
     telefono: '',
     edad: 0,
-    metadata: { score: acuityScore.value, test: 'visioncheck1', flujo: 'sin_formulario' }
+    metadata: { score: acuityScore.value, turno: selectedTurno.value, test: 'visioncheck1', flujo: 'sin_formulario' }
   })
   if (hasSupabaseConfig && leadId.value) {
     try {
       await supabase.from('leads').update({
         estado: 'Agendado',
         estado_cita: 'Nueva',
-        respuestas: { visionCheck_score: acuityScore.value, etapa: 'agendado_sin_formulario', paso: 4 }
+        respuestas: { visionCheck_score: acuityScore.value, turno: selectedTurno.value, etapa: 'agendado_sin_formulario', paso: 4 }
       }).eq('id', leadId.value)
     } catch (e) {}
   }
 
-  // Enviar directamente a WhatsApp con el mensaje genérico
-  const waUrl = `https://wa.me/593980753069?text=${encodeURIComponent('Hola! deseo agendar un examen visual gratuito')}`
-  window.location.href = waUrl
+  // Abrir WhatsApp con mensaje para Madeline incluyendo el score y turno
+  const turnoTexto = selectedTurno.value === 'manana' ? 'de la mañana (10:30)' : 'de la tarde (15:30)'
+  const msg = `¡Hola Madeline! 👋 Acabo de terminar el chequeo de agudeza visual (Score: ${acuityScore.value}) y aparté el turno ${turnoTexto} para mi examen computarizado gratuito en Matriz Guayaquil. ¿Me confirmas la dirección exacta?`
+  window.open(`https://wa.me/593980753069?text=${encodeURIComponent(msg)}`, '_blank')
 }
 
 async function handleFormSubmit(formData: { nombre: string; telefono: string; edad: number }) {
