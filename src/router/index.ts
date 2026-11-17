@@ -25,6 +25,28 @@ const router = createRouter({
       name: 'quiz3',
       component: () => import('@/views/Quiz3View.vue'),
     },
+    {
+      path: '/quiz4',
+      name: 'quiz4',
+      component: () => import('@/views/Quiz4View.vue'),
+    },
+    {
+      path: '/quiz5',
+      name: 'quiz5',
+      component: () => import('@/views/Quiz5View.vue'),
+    },
+    {
+      path: '/lentes',
+      redirect: '/quiz4',
+    },
+    {
+      path: '/promo',
+      redirect: '/quiz5',
+    },
+    {
+      path: '/oferta',
+      redirect: '/quiz5',
+    },
     // Rutas Multi-Tenant por Cliente: /:clientSlug/:quizSlug
     {
       path: '/opticajohanna/quiz1',
@@ -40,6 +62,16 @@ const router = createRouter({
       path: '/opticajohanna/quiz3',
       name: 'opticajohanna-quiz3',
       component: () => import('@/views/Quiz3View.vue'),
+    },
+    {
+      path: '/opticajohanna/quiz4',
+      name: 'opticajohanna-quiz4',
+      component: () => import('@/views/Quiz4View.vue'),
+    },
+    {
+      path: '/opticajohanna/quiz5',
+      name: 'opticajohanna-quiz5',
+      component: () => import('@/views/Quiz5View.vue'),
     },
     {
       path: '/visioncheck1',
@@ -59,6 +91,16 @@ const router = createRouter({
       path: '/:clientSlug/quiz3',
       name: 'client-quiz3',
       component: () => import('@/views/Quiz3View.vue'),
+    },
+    {
+      path: '/:clientSlug/quiz4',
+      name: 'client-quiz4',
+      component: () => import('@/views/Quiz4View.vue'),
+    },
+    {
+      path: '/:clientSlug/quiz5',
+      name: 'client-quiz5',
+      component: () => import('@/views/Quiz5View.vue'),
     },
     {
       path: '/:clientSlug/visioncheck1',
