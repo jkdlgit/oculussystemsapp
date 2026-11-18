@@ -141,12 +141,13 @@ const maxRounds = 2
 
 // Sets de letras por ronda
 const letterSets = [
-  ['E', 'P', 'T', 'O', 'F', 'Z'], // ronda 1 — letras grandes (16px)
-  ['C', 'D', 'L', 'V', 'N', 'R'], // ronda 2 — letras pequeñas (9.5px)
+  ['E', 'P', 'T', 'O', 'F', 'Z'], // ronda 1 — letras grandes (72px)
+  ['C', 'D', 'L', 'V', 'N', 'R'], // ronda 2 — letras medianas (44px)
 ]
 
-// Tamaños de fuente por ronda (drásticamente reducidos, empezando pequeño)
-const fontSizes = ['16px', '9.5px']
+// Tamaños de fuente por ronda: visibles para +50 años en pantalla de celular
+// Ronda 1: grande pero no trivial | Ronda 2: claramente más pequeño pero aún desafiante
+const fontSizes = ['72px', '44px']
 
 // === Estado ===
 const currentRound = ref(1)
